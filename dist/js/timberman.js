@@ -156,26 +156,6 @@ function gameOver() {
 		localStorage.setItem('bestscore', bestscore);
 	}
 
-	// Обновляем баланс через API
-	try {
-		const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
-		if (telegramId) {
-			fetch('/update-balances', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'x-telegram-init-data': window.Telegram.WebApp.initData
-				},
-				body: JSON.stringify({
-					telegramId,
-					totalBalance: score // Добавляем текущий счет к общему балансу
-				})
-			});
-		}
-	} catch (error) {
-		console.error('Error updating balance:', error);
-	}
-
 	// Добавляем текущий счет к общему DPS
 	let totalDPS = parseInt(localStorage.getItem('totalDPS')) || 0;
 	let totalGameEarnings = parseInt(localStorage.getItem('totalGameEarnings')) || 0;
@@ -186,7 +166,7 @@ function gameOver() {
 	localStorage.setItem('totalDPS', totalDPS.toString());
 	localStorage.setItem('totalGameEarnings', totalGameEarnings.toString());
 
-	// Проверяем выполнение заданий на набор DPS за игру
+	// Проверяем выполнение заданий
 	const scoreThresholds = [50, 100, 200, 400, 800];
 	scoreThresholds.forEach(threshold => {
 		if (score >= threshold) {
