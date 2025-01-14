@@ -659,8 +659,16 @@ const routes = {
                     const data = JSON.parse(body);
                     const { telegramId, gameScore } = data;
 
-                    if (!telegramId) {
-                        resolve({ status: 400, body: { error: 'Missing telegramId' } });
+                    // Добавляем проверку на gameScore
+                    if (!telegramId || typeof gameScore !== 'number') {
+                        console.log('Invalid data received:', { telegramId, gameScore });
+                        resolve({ 
+                            status: 400, 
+                            body: { 
+                                error: 'Missing telegramId or invalid gameScore',
+                                received: { telegramId, gameScore } 
+                            } 
+                        });
                         return;
                     }
 
@@ -670,14 +678,28 @@ const routes = {
                         return;
                     }
 
-                    // Добавляем новый счет к существующему балансу
-                    const newTotalBalance = (user.totalBalance || 0) + gameScore;
+                    // Убеждаемся, что оба значения являются числами
+                    const currentBalance = parseInt(user.totalBalance || 0);
+                    const scoreToAdd = parseInt(gameScore);
+                    const newTotalBalance = currentBalance + scoreToAdd;
 
                     console.log('Updating balance:', {
-                        oldBalance: user.totalBalance,
-                        gameScore,
+                        oldBalance: currentBalance,
+                        gameScore: scoreToAdd,
                         newTotalBalance
                     });
+
+                    // Проверяем, что newTotalBalance является числом
+                    if (isNaN(newTotalBalance)) {
+                        resolve({ 
+                            status: 400, 
+                            body: { 
+                                error: 'Invalid balance calculation',
+                                details: { currentBalance, scoreToAdd } 
+                            } 
+                        });
+                        return;
+                    }
 
                     // Обновляем общий баланс пользователя
                     await user.update({

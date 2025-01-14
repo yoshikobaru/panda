@@ -191,7 +191,9 @@ function gameOver() {
 
 	// Отправляем событие с результатом игры
 	const gameOverEvent = new CustomEvent('gameOver', { 
-		detail: { score: score }
+		detail: { 
+			score: parseInt(score) || 0  // Убеждаемся, что score всегда число
+		}
 	});
 	window.dispatchEvent(gameOverEvent);
 }
