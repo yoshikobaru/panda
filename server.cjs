@@ -649,7 +649,7 @@ const routes = {
             req.on('end', async () => {
                 try {
                     const data = JSON.parse(body);
-                    const { telegramId, totalBalance } = data;
+                    const { telegramId, gameScore } = data;
 
                     if (!telegramId) {
                         resolve({ status: 400, body: { error: 'Missing telegramId' } });
@@ -662,9 +662,18 @@ const routes = {
                         return;
                     }
 
-                    // Просто устанавливаем новое значение totalBalance
+                    // Добавляем новый счет к существующему балансу
+                    const newTotalBalance = (user.totalBalance || 0) + gameScore;
+
+                    console.log('Updating balance:', {
+                        oldBalance: user.totalBalance,
+                        gameScore,
+                        newTotalBalance
+                    });
+
+                    // Обновляем общий баланс пользователя
                     await user.update({
-                        totalBalance: totalBalance // Используем значение как есть
+                        totalBalance: newTotalBalance
                     });
 
                     resolve({
@@ -672,7 +681,7 @@ const routes = {
                         body: {
                             success: true,
                             balances: {
-                                totalBalance: totalBalance,
+                                totalBalance: newTotalBalance,
                                 taskBalance: user.taskBalance,
                                 inviteBalance: user.inviteBalance
                             }
