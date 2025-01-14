@@ -300,33 +300,41 @@ const routes = {
 },
     '/get-balances': async (req, res, query) => {
     const telegramId = query.telegramId;
+    console.log('Get balances request for user:', telegramId);
     
     if (!telegramId) {
-      return { status: 400, body: { error: 'Missing telegramId parameter' } };
+        console.log('Missing telegramId parameter');
+        return { status: 400, body: { error: 'Missing telegramId parameter' } };
     }
 
     try {
-      const user = await User.findOne({ where: { telegramId } });
-      if (!user) {
-        return { status: 404, body: { error: 'User not found' } };
-      }
+        const user = await User.findOne({ where: { telegramId } });
+        console.log('Found user:', user ? user.dataValues : null);
+        
+        if (!user) {
+            console.log('User not found:', telegramId);
+            return { status: 404, body: { error: 'User not found' } };
+        }
 
-      return {
-        status: 200,
-        body: {
-          success: true,
-          balances: {
+        const balances = {
             totalBalance: user.totalBalance,
             taskBalance: user.taskBalance,
             inviteBalance: user.inviteBalance
-          }
-        }
-      };
+        };
+        
+        console.log('Returning balances:', balances);
+        
+        return {
+            status: 200,
+            body: {
+                success: true,
+                balances
+            }
+        };
     } catch (error) {
-      console.error('Error getting balances:', error);
-      return { status: 500, body: { error: 'Internal server error' } };
+        console.error('Error getting balances:', error);
+        return { status: 500, body: { error: 'Internal server error' } };
     }
-  
 },
     '/get-referral-link': async (req, res, query) => {
       console.log('Получен запрос на /get-referral-link');
