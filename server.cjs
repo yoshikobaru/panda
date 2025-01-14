@@ -946,19 +946,11 @@ const serveStaticFile = (filePath, res) => {
   fs.readFile(filePath, (error, content) => {
     if (error) {
       if(error.code === 'ENOENT') {
-        // Если файл не найден, возвращаем index.html для SPA
-        fs.readFile(path.join(__dirname, 'dist', 'index.html'), (error, content) => {
-          if (error) {
-            res.writeHead(404);
-            res.end('Файл не найден');
-          } else {
-            res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.end(content, 'utf-8');
-          }
-        });
+        res.writeHead(404);
+        res.end('File not found');
       } else {
         res.writeHead(500);
-        res.end('Ошибка сервера: ' + error.code);
+        res.end('Server error: ' + error.code);
       }
     } else {
       res.writeHead(200, { 'Content-Type': contentType });
