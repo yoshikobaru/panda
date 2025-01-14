@@ -657,16 +657,16 @@ const routes = {
             req.on('end', async () => {
                 try {
                     const data = JSON.parse(body);
-                    const { telegramId, gameScore } = data;
+                    const { telegramId, score } = data;
 
-                    // Добавляем проверку на gameScore
-                    if (!telegramId || typeof gameScore !== 'number') {
-                        console.log('Invalid data received:', { telegramId, gameScore });
+                    // Добавляем проверку на score
+                    if (!telegramId || typeof score !== 'number') {
+                        console.log('Invalid data received:', { telegramId, score });
                         resolve({ 
                             status: 400, 
                             body: { 
-                                error: 'Missing telegramId or invalid gameScore',
-                                received: { telegramId, gameScore } 
+                                error: 'Missing telegramId or invalid score',
+                                received: { telegramId, score } 
                             } 
                         });
                         return;
@@ -680,12 +680,12 @@ const routes = {
 
                     // Убеждаемся, что оба значения являются числами
                     const currentBalance = parseInt(user.totalBalance || 0);
-                    const scoreToAdd = parseInt(gameScore);
+                    const scoreToAdd = parseInt(score);
                     const newTotalBalance = currentBalance + scoreToAdd;
 
                     console.log('Updating balance:', {
                         oldBalance: currentBalance,
-                        gameScore: scoreToAdd,
+                        score: scoreToAdd,
                         newTotalBalance
                     });
 
