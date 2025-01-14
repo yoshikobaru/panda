@@ -25,36 +25,36 @@ initKeyboard();
 resizeScreen(true);
 
 // Load sprites
-var background    = loadSprite("./assets/background.png", onReady);
+var background = loadSprite("/assets/background.png", onReady);
 
 // Intro
-var clic         = loadSprite("./assets/clic.png", onReady);
-var or           = loadSprite("./assets/or.png", onReady);
-var left         = loadSprite("./assets/left.png", onReady);
-var right        = loadSprite("./assets/right.png", onReady);
+var clic = loadSprite("/assets/clic.png", onReady);
+var or = loadSprite("/assets/or.png", onReady);
+var left = loadSprite("/assets/left.png", onReady);
+var right = loadSprite("/assets/right.png", onReady);
 
 // Trunk
-var stump        = loadSprite("./assets/stump.png", onReady);
-var trunk1       = loadSprite("./assets/trunk1.png", onReady);
-var branchleft   = loadSprite("./assets/branch1.png", onReady);
-var branchright  = loadSprite("./assets/branch2.png", onReady);
+var stump = loadSprite("/assets/stump.png", onReady);
+var trunk1 = loadSprite("/assets/trunk1.png", onReady);
+var branchleft = loadSprite("/assets/branch1.png", onReady);
+var branchright = loadSprite("/assets/branch2.png", onReady);
 
 // Game Over
-var rip          = loadSprite("./assets/rip.png", onReady);
-var gameover     = loadSprite("./assets/gameover.png", onReady);
-var play         = loadSprite("./assets/play.png", onReady, restartGame);
+var rip = loadSprite("/assets/rip.png", onReady);
+var gameover = loadSprite("/assets/gameover.png", onReady);
+var play = loadSprite("/assets/play.png", onReady, restartGame);
 
 // Timberman
-var man          = loadSprite("./assets/man.png", onReady);
+var man = loadSprite("/assets/man.png", onReady);
 
 // Score
 for(var n=0; n<10; n++) {
-    number[n]    = loadSprite("./assets/numbers.png", onReady);
+    number[n] = loadSprite("/assets/numbers.png", onReady);
 }
 
 // Progress bar
-var timecontainer = loadSprite("./assets/time-container.png", onReady);
-var timebar      = loadSprite("./assets/time-bar.png", onReady);	
+var timecontainer = loadSprite("/assets/time-container.png", onReady);
+var timebar = loadSprite("/assets/time-bar.png", onReady);	
 
 function onReady() {
 	loadProgress++
@@ -156,6 +156,26 @@ function gameOver() {
 		localStorage.setItem('bestscore', bestscore);
 	}
 
+	// Обновляем баланс через API
+	try {
+		const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+		if (telegramId) {
+			fetch('/update-balances', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'x-telegram-init-data': window.Telegram.WebApp.initData
+				},
+				body: JSON.stringify({
+					telegramId,
+					totalBalance: score // Добавляем текущий счет к общему балансу
+				})
+			});
+		}
+	} catch (error) {
+		console.error('Error updating balance:', error);
+	}
+
 	// Добавляем текущий счет к общему DPS
 	let totalDPS = parseInt(localStorage.getItem('totalDPS')) || 0;
 	let totalGameEarnings = parseInt(localStorage.getItem('totalGameEarnings')) || 0;
@@ -188,11 +208,22 @@ function gameOver() {
 			localStorage.setItem(taskKey, 'true');
 		}
 	});
+
+	// Отправляем событие с результатом игры
+	const gameOverEvent = new CustomEvent('gameOver', { 
+		detail: { score: score }
+	});
+	window.dispatchEvent(gameOverEvent);
 }
 
 function renderGame() {
-	var p=0, m=0;
-	clearScreen("black")
+	const canvas = document.getElementById('game');
+	if (!canvas) {
+		console.log('Canvas not found, stopping game');
+		return;
+	}
+
+	clearScreen("black");
 	
 	// Display Background
 	displaySprite(background, 0, 0);
