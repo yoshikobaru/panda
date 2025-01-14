@@ -70,8 +70,16 @@ const User = sequelize.define('User', {
     defaultValue: 0,
     allowNull: false
   },
-  rootBalance: {
-    type: DataTypes.DECIMAL(10, 2), // для хранения значений с 2 знаками после запятой
+  totalBalance: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  taskBalance: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  inviteBalance: {
+    type: DataTypes.INTEGER,
     defaultValue: 0
   },
   purchasedModes: {
@@ -90,15 +98,20 @@ const User = sequelize.define('User', {
   lastAdWatchTime: {
     type: DataTypes.DATE,
     allowNull: true
+  },
+  highScore: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    allowNull: false
   }
 });
 
 // Синхронизируем модель с базой данных
 sequelize.sync({ alter: true });
 // Создаем экземпляр бота с вашим токеном
-const bot = new Telegraf(process.env.ROOT_BOT_TOKEN);
+const bot = new Telegraf(process.env.PANDA_BOT_TOKEN);
 // WebApp URL
-const webAppUrl = 'https://walletfinder.ru';
+const webAppUrl = 'https://pandapp.ru';
 
 // Обработчик команды /start
 bot.command('start', async (ctx) => {
@@ -214,7 +227,7 @@ function validateInitData(initData) {
     
   // Создаем HMAC
   const secret = crypto.createHmac('sha256', 'WebAppData')
-    .update(process.env.ROOT_BOT_TOKEN)
+    .update(process.env.PANDA_BOT_TOKEN)
     .digest();
     
   const generatedHash = crypto.createHmac('sha256', secret)
@@ -231,7 +244,6 @@ async function authMiddleware(req, res) {
   }
   return null;
 }
-
 const routes = {
   GET: {
     '/get-user': async (req, res, query) => {
@@ -286,51 +298,36 @@ const routes = {
     };
   }
 },
-    '/get-root-balance': async (req, res, query) => {
-      const telegramId = query.telegramId;
-      
-      if (!telegramId) {
-        return { 
-          status: 400, 
-          body: { error: 'Missing telegramId parameter' } 
-        };
+    '/get-balances': async (req, res, query) => {
+    const telegramId = query.telegramId;
+    
+    if (!telegramId) {
+      return { status: 400, body: { error: 'Missing telegramId parameter' } };
+    }
+
+    try {
+      const user = await User.findOne({ where: { telegramId } });
+      if (!user) {
+        return { status: 404, body: { error: 'User not found' } };
       }
-  
-      try {
-        const user = await User.findOne({ where: { telegramId } });
-        if (!user) {
-          return { 
-            status: 404, 
-            body: { 
-              success: false,
-              error: 'User not found' 
-            } 
-          };
+
+      return {
+        status: 200,
+        body: {
+          success: true,
+          balances: {
+            totalBalance: user.totalBalance,
+            taskBalance: user.taskBalance,
+            inviteBalance: user.inviteBalance
+          }
         }
+      };
+    } catch (error) {
+      console.error('Error getting balances:', error);
+      return { status: 500, body: { error: 'Internal server error' } };
+    }
   
-        return { 
-          status: 200, 
-          body: { 
-            success: true,
-            rootBalance: user.rootBalance,
-            user: {
-              telegramId: user.telegramId,
-              username: user.username,
-              referralCode: user.referralCode
-            }
-          } 
-        };
-      } catch (error) {
-        console.error('Error getting root balance:', error);
-        return { 
-          status: 500, 
-          body: { 
-            success: false,
-            error: 'Internal server error' 
-          } 
-        };
-      }
-    },
+},
     '/get-referral-link': async (req, res, query) => {
       console.log('Получен запрос на /get-referral-link');
       const telegramId = query.telegramId;
@@ -344,7 +341,7 @@ const routes = {
         console.log('Поиск пользователя с telegramId:', telegramId);
         const user = await User.findOne({ where: { telegramId } });
         if (user) {
-          const inviteLink = `https://t.me/RootBTC_bot?start=${user.referralCode}`;
+          const inviteLink = `https://t.me/pandapp_gamebot?start=${user.referralCode}`;
           console.log('Сгенерирована ссылка:', inviteLink);
           return { status: 200, body: { inviteLink } };
         } else {
@@ -357,50 +354,75 @@ const routes = {
       }
     },
     '/get-referral-count': async (req, res, query) => {
-  const telegramId = query.telegramId;
-  
-  if (!telegramId) {
-    return { 
-      status: 400, 
-      body: { error: 'Telegram ID is required' } 
-    };
-  }
+      const authError = await authMiddleware(req, res);
+      if (authError) return authError;
 
-  try {
-    const user = await User.findOne({ where: { telegramId } });
-    if (!user) {
-      return { 
-        status: 404, 
-        body: { error: 'User not found' } 
-      };
-    }
+      console.log('Request query:', query);
+      console.log('Request URL:', req.url);
+      
+      // Используем query.telegramId
+      const telegramId = query?.telegramId;
+      
+      if (!telegramId) {
+        console.error('No telegramId provided in request');
+        return { 
+          status: 400, 
+          body: { 
+            success: false, 
+            error: 'Telegram ID is required' 
+          } 
+        };
+      }
 
-    // Получаем количество рефералов
-    const referralCount = await User.count({
-      where: { referredBy: user.referralCode }
-    });
+      try {
+        const user = await User.findOne({ where: { telegramId } });
+        console.log('Found user:', user);
 
-    // Вычисляем статистику для фронтенда
-    const rewardsEarned = Math.floor(referralCount / 3);
-    const nextRewardAt = (rewardsEarned + 1) * 3;
+        if (!user) {
+          return { 
+            status: 404, 
+            body: { 
+              success: false, 
+              error: 'User not found' 
+            } 
+          };
+        }
 
-    return { 
-      status: 200, 
-      body: { 
-        success: true,
-        count: referralCount,
-        rewardsEarned,
-        nextRewardAt
-      } 
-    };
-  } catch (error) {
-    console.error('Error getting referral count:', error);
-    return { 
-      status: 500, 
-      body: { error: 'Failed to get referral count' } 
-    };
-  }
-},
+        // Получаем список рефералов
+        const referrals = await User.findAll({
+          where: { referredBy: user.referralCode },
+          attributes: ['telegramId', 'username', 'createdAt'],
+          raw: true
+        });
+
+        console.log('Found referrals:', referrals);
+
+        // Форматируем данные
+        const formattedReferrals = referrals.map(ref => ({
+          id: ref.telegramId,
+          username: ref.username || `User_${ref.telegramId}`,
+          joinDate: ref.createdAt,
+          dps: 100
+        }));
+
+        return {
+          status: 200,
+          body: {
+            success: true,
+            referrals: formattedReferrals
+          }
+        };
+      } catch (error) {
+        console.error('Error in get-referral-count:', error);
+        return { 
+          status: 500, 
+          body: { 
+            success: false, 
+            error: 'Server error' 
+          } 
+        };
+      }
+    },
 '/create-mode-invoice': async (req, res, query) => {
     const { telegramId, modeName } = query;
     
@@ -556,78 +578,113 @@ const routes = {
     }
 },
 '/reward': async (req, res, query) => {
-    const telegramId = query.userid;
-    
-    if (!telegramId) {
-        return { status: 400, body: { error: 'Missing userid parameter' } };
-    }
+  const telegramId = query.userid;
+  
+  if (!telegramId) {
+      return { status: 400, body: { error: 'Missing userid parameter' } };
+  }
 
-    try {
-        const user = await User.findOne({ where: { telegramId } });
-        if (!user) {
-            return { status: 404, body: { error: 'User not found' } };
-        }
+  try {
+      const user = await User.findOne({ where: { telegramId } });
+      if (!user) {
+          return { status: 404, body: { error: 'User not found' } };
+      }
 
-        // Обновляем только счетчик просмотров рекламы
-        await user.update({
-            adWatchCount: (user.adWatchCount || 0) + 1
-        });
+      await user.update({
+          adWatchCount: (user.adWatchCount || 0) + 1
+      });
 
-        return { status: 200, body: { 
-            success: true, 
-            message: 'Ad view recorded',
-            adWatchCount: user.adWatchCount + 1
-        }};
-    } catch (error) {
-        console.error('Error in reward endpoint:', error);
-        return { status: 500, body: { error: 'Internal server error' } };
-    }
-    }
-  },
+      return { status: 200, body: { 
+          success: true, 
+          message: 'Ad view recorded',
+          adWatchCount: user.adWatchCount + 1
+      }};
+  } catch (error) {
+      console.error('Error in reward endpoint:', error);
+      return { status: 500, body: { error: 'Internal server error' } };
+  }
+},
+
+'/get-leaderboard': async (_, res) => {
+  try {
+      const leaderboard = await User.findAll({
+          attributes: ['telegramId', 'username', 'highScore'],
+          order: [['highScore', 'DESC']],
+          limit: 10,
+          raw: true
+      });
+
+      return {
+          status: 200,
+          body: {
+              success: true,
+              leaderboard: leaderboard.map(player => ({
+                  telegramId: String(player.telegramId),
+                  username: player.username || 'Anonymous',
+                  highScore: Number(player.highScore || 0)
+              }))
+          }
+      };
+  } catch (error) {
+      console.error('Leaderboard error:', error);
+      return {
+          status: 500,
+          body: {
+              success: false,
+              error: 'Could not fetch leaderboard'
+          }
+      };
+  }
+}
+},
     POST: {
-      '/update-root-balance': async (req, res) => {
+      '/update-balances': async (req, res) => {
         const authError = await authMiddleware(req, res);
         if (authError) return authError;
-      
+        
         let body = '';
         req.on('data', chunk => { body += chunk; });
         
         return new Promise((resolve) => {
-          req.on('end', async () => {
-            try {
-              const data = JSON.parse(body);
-              const { telegramId, rootBalance } = data;
-      
-              if (!telegramId || rootBalance === undefined) {
-                resolve({ status: 400, body: { error: 'Missing required parameters' } });
-                return;
-              }
-      
-              const user = await User.findOne({ where: { telegramId } });
-              if (!user) {
-                resolve({ status: 404, body: { error: 'User not found' } });
-                return;
-              }
-      
-              await user.update({ rootBalance });
-      
-              resolve({
-                status: 200,
-                body: { 
-                  success: true,
-                  rootBalance: user.rootBalance
+            req.on('end', async () => {
+                try {
+                    const data = JSON.parse(body);
+                    const { telegramId, totalBalance } = data;
+
+                    if (!telegramId) {
+                        resolve({ status: 400, body: { error: 'Missing telegramId' } });
+                        return;
+                    }
+
+                    const user = await User.findOne({ where: { telegramId } });
+                    if (!user) {
+                        resolve({ status: 404, body: { error: 'User not found' } });
+                        return;
+                    }
+
+                    // Просто устанавливаем новое значение totalBalance
+                    await user.update({
+                        totalBalance: totalBalance // Используем значение как есть
+                    });
+
+                    resolve({
+                        status: 200,
+                        body: {
+                            success: true,
+                            balances: {
+                                totalBalance: totalBalance,
+                                taskBalance: user.taskBalance,
+                                inviteBalance: user.inviteBalance
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error updating balances:', error);
+                    resolve({ status: 500, body: { error: 'Internal server error' } });
                 }
-              });
-            } catch (error) {
-              console.error('Error updating root balance:', error);
-              resolve({ 
-                status: 500, 
-                body: { error: 'Internal server error' } 
-              });
-            }
-          });
+            });
         });
-      },
+    },
       '/create-user': async (req, res) => {
   const authError = await authMiddleware(req, res);
   if (authError) return authError;
@@ -641,6 +698,13 @@ const routes = {
         const data = JSON.parse(body);
         const { telegramId, username, referralCode, referredBy } = data;
         
+        console.log('Creating user with data:', {
+          telegramId,
+          username,
+          referralCode,
+          referredBy
+        });
+
         if (!telegramId || !referralCode) {
           resolve({ 
             status: 400, 
@@ -651,6 +715,7 @@ const routes = {
 
         // Проверяем существующего пользователя
         let user = await User.findOne({ where: { telegramId } });
+        console.log('Existing user:', user);
         
         if (user) {
           resolve({
@@ -662,7 +727,6 @@ const routes = {
                 telegramId: user.telegramId,
                 username: user.username,
                 referralCode: user.referralCode,
-                rootBalance: user.rootBalance,
                 referredBy: user.referredBy
               }
             }
@@ -675,49 +739,10 @@ const routes = {
           const referrer = await User.findOne({ 
             where: { referralCode: referredBy } 
           });
+          console.log('Found referrer:', referrer);
           
           if (referrer) {
             console.log(`User ${telegramId} was referred by ${referrer.telegramId}`);
-            
-            try {
-              // Отправляем уведомление рефереру
-              await bot.telegram.sendMessage(
-                referrer.telegramId,
-                `🎉 New referral! User ${username} joined using your link!\n\nKeep sharing to earn more rewards!`
-              );
-
-              // Получаем количество рефералов
-              const referralCount = await User.count({
-                where: { referredBy: referrer.referralCode }
-              });
-
-              // Проверяем, нужно ли выдать награду
-              const newRewardsCount = Math.floor(referralCount / 3);
-              const currentRewardsCount = referrer.referralRewardsCount || 0;
-
-              if (newRewardsCount > currentRewardsCount) {
-                // Вычисляем количество новых наград
-                const rewardsToGive = newRewardsCount - currentRewardsCount;
-                const rewardAmount = rewardsToGive * 0.5;
-
-                // Обновляем баланс и счетчик наград реферера
-                await referrer.update({
-                  rootBalance: Number((referrer.rootBalance + rewardAmount).toFixed(2)),
-                  referralRewardsCount: newRewardsCount
-                });
-
-                // Отправляем уведомление о награде
-                await bot.telegram.sendMessage(
-                  referrer.telegramId,
-                  `🎯 Congratulations! You've earned ${rewardAmount} ROOT for inviting ${rewardsToGive * 3} friends!\n\nKeep inviting to earn more!`
-                );
-              }
-
-            } catch (error) {
-              console.error('Failed to process referral rewards:', error);
-            }
-          } else {
-            referredBy = null;
           }
         }
 
@@ -726,10 +751,10 @@ const routes = {
           telegramId,
           username,
           referralCode,
-          rootBalance: 0,
-          referredBy: referredBy || null,
-          referralRewardsCount: 0
+          referredBy: referredBy || null
         });
+
+        console.log('Created new user:', user);
 
         resolve({
           status: 200,
@@ -740,7 +765,6 @@ const routes = {
               telegramId: user.telegramId,
               username: user.username,
               referralCode: user.referralCode,
-              rootBalance: user.rootBalance,
               referredBy: user.referredBy
             }
           }
@@ -755,90 +779,155 @@ const routes = {
     });
   });
 },
-      '/admin/broadcast': async (req, res) => {
-    const authError = await authMiddleware(req, res);
-    if (authError) return authError;
-    
-    let body = '';
-    req.on('data', chunk => { body += chunk; });
-    
-    return new Promise((resolve) => {
-        req.on('end', async () => {
-            try {
-                const data = JSON.parse(body);
-                const adminId = data.adminId.toString();
-                
-                if (!isAdmin(adminId)) {  // Используем функцию isAdmin
-                    resolve({
-                        status: 403,
-                        body: { error: 'Unauthorized: Admin access required' }
-                    });
-                    return;
-                }
+'/admin/broadcast': async (req, res) => {
+  const authError = await authMiddleware(req, res);
+  if (authError) return authError;
   
-                      const { message, button } = data;
-                      
-                      // Получаем всех пользователей
-                      const users = await User.findAll();
-                      const results = {
-                          total: users.length,
-                          success: 0,
-                          failed: 0
-                      };
+  let body = '';
+  req.on('data', chunk => { body += chunk; });
   
-                      // Отправляем сообщение каждому пользователю
-                      for (const user of users) {
-                          try {
-                              const messageData = {
-                                  chat_id: user.telegramId,
-                                  text: message,
-                                  parse_mode: 'HTML'
-                              };
-  
-                              // Если есть кнопка, добавляем её
-                              if (button) {
-                                  messageData.reply_markup = {
-                                      inline_keyboard: [[{
-                                          text: button.text,
-                                          web_app: { url: button.url }
-                                      }]]
-                                  };
-                              }
-  
-                              await bot.telegram.sendMessage(
-                                  user.telegramId,
-                                  message,
-                                  messageData
-                              );
-                              results.success++;
-                          } catch (error) {
-                              console.error(`Failed to send message to ${user.telegramId}:`, error);
-                              results.failed++;
-                          }
-                          
-                          // Добавляем задержку между сообщениями
-                          await new Promise(resolve => setTimeout(resolve, 50));
-                      }
-  
-                      resolve({
-                          status: 200,
-                          body: { 
-                              success: true,
-                              results
-                          }
-                      });
-                  } catch (error) {
-                      console.error('Error in broadcast:', error);
-                      resolve({ 
-                          status: 500, 
-                          body: { error: 'Internal server error: ' + error.message }
-                      });
-                  }
-              });
+  return new Promise((resolve) => {
+    req.on('end', async () => {
+      try {
+        const data = JSON.parse(body);
+        const adminId = data.adminId.toString();
+        
+        if (!isAdmin(adminId)) {
+          resolve({
+            status: 403,
+            body: { error: 'Unauthorized: Admin access required' }
           });
+          return;
+        }
+
+        const { message, button } = data;
+        const users = await User.findAll();
+        const results = {
+          total: users.length,
+          success: 0,
+          failed: 0
+        };
+
+        for (const user of users) {
+          try {
+            const messageData = {
+              chat_id: user.telegramId,
+              text: message,
+              parse_mode: 'HTML'
+            };
+
+            if (button) {
+              messageData.reply_markup = {
+                inline_keyboard: [[{
+                  text: button.text,
+                  web_app: { url: button.url }
+                }]]
+              };
+            }
+
+            await bot.telegram.sendMessage(
+              user.telegramId,
+              message,
+              messageData
+            );
+            results.success++;
+          } catch (error) {
+            console.error(`Failed to send message to ${user.telegramId}:`, error);
+            results.failed++;
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+
+        resolve({
+          status: 200,
+          body: { 
+            success: true,
+            results
+          }
+        });
+      } catch (error) {
+        console.error('Error in broadcast:', error);
+        resolve({ 
+          status: 500, 
+          body: { error: 'Internal server error: ' + error.message }
+        });
       }
+    });
+  });
+},
+    '/update-high-score': async (req, res) => {
+      let body = '';
+      
+      req.on('data', chunk => {
+        body += chunk.toString();
+      });
+      
+      return new Promise((resolve) => {
+        req.on('end', async () => {
+          try {
+            console.log('Received score update body:', body);
+            
+            const data = JSON.parse(body);
+            console.log('Parsed score data:', data);
+            
+            const { telegramId, highScore } = data;
+            
+            if (!telegramId || typeof highScore !== 'number') {
+              resolve({
+                status: 400,
+                body: { 
+                  success: false,
+                  error: 'Invalid input data'
+                }
+              });
+              return;
+            }
+            
+            const user = await User.findOne({ 
+              where: { telegramId: telegramId.toString() } 
+            });
+            
+            if (!user) {
+              resolve({
+                status: 404,
+                body: {
+                  success: false,
+                  error: 'User not found'
+                }
+              });
+              return;
+            }
+            
+            if (highScore > (user.highScore || 0)) {
+              await user.update({ highScore });
+              console.log(`Updated highScore for ${telegramId} to ${highScore}`);
+            }
+            
+            resolve({
+              status: 200,
+              body: {
+                success: true,
+                highScore: Math.max(user.highScore || 0, highScore)
+              }
+            });
+            
+          } catch (error) {
+            console.error('Error processing score update:', error);
+            resolve({
+              status: 400,
+              body: {
+                success: false,
+                error: error.message
+              }
+            });
+          }
+        });
+      });
     }
-  };
+  }
+};
+
 
 // Функция для обработки статических файлов
 const serveStaticFile = (filePath, res) => {
@@ -888,24 +977,36 @@ const server = https.createServer(options, async (req, res) => {
   const pathname = parsedUrl.pathname;
   const method = req.method;
 
+  console.log('Received request:', {
+    method,
+    pathname,
+    query: parsedUrl.query
+  });
+
   if (routes[method] && routes[method][pathname]) {
     const handler = routes[method][pathname];
-    const result = await handler(req, res, parsedUrl.query);
-    res.writeHead(result.status, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(result.body));
+    try {
+      const result = await handler(req, res, parsedUrl.query);
+      res.writeHead(result.status, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result.body));
+    } catch (error) {
+      console.error('Error handling request:', error);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Internal server error' }));
+    }
   } else {
     let filePath = path.join(__dirname, 'dist', req.url === '/' ? 'index.html' : req.url);
     serveStaticFile(filePath, res);
   }
 });
 
-const httpsPort = 666;
-const httpPort = 667;
+const httpsPort = 888;
+const httpPort = 887;
 
 server.listen(httpsPort, () => {
   console.log(`HTTPS Сервер запущен на порту ${httpsPort}`);
   console.log('Telegram бот запущен');
-  console.log(`HTTPS Сервер запущен на https://walletfinder.ru`);
+  console.log(`HTTPS Сервер запущен на https://pandapp.ru.ru`);
 });
 
 // HTTP to HTTPS redirect
