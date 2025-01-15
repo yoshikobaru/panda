@@ -281,11 +281,11 @@ function renderGame() {
 		displaySprite(gameover, 110, -250);
 		displaySprite(play, 350, 900);
 		
-		// Используем lastScore вместо score
-		for (var i=0; i < lastScore.toString().length; i++) {
-			p = lastScore.toString().substring(i, i+1)
-			m = screenWidth()/2 - 35 * lastScore.toString().length
-			displaySprite(number[p], m + 67 * i, 600)
+		// Отображаем текущий счет (убираем нижний ноль)
+		for (var i=0; i < score.toString().length; i++) {
+			p = score.toString().substring(i, i+1)
+			m = screenWidth()/2 - 35 * score.toString().length
+			displaySprite(number[p], m + 67 * i, 700)
 		}
 		
 		// Отображаем best score
