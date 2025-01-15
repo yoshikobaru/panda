@@ -303,10 +303,13 @@ function renderGame() {
 	
 	// Display Score - для всех состояний игры
 	if (level == levelPlay || level == levelGameOver) {
-		for (var i=0; i<score.toString().length; i++) {
-			p = score.toString().substring(i, i+1)
-			m = screenWidth()/2 - 35 * score.toString().length
-			displaySprite(number[p], m + 67 * i, 700)
+		// Преобразуем score в строку и убедимся, что используем все цифры
+		let scoreStr = score.toString();
+		for (var i = 0; i < scoreStr.length; i++) {
+			// Берем каждую цифру как есть, без деления
+			let digit = parseInt(scoreStr[i]);
+			let m = screenWidth()/2 - 35 * scoreStr.length;
+			displaySprite(number[digit], m + 67 * i, 700);
 		}
 	}
 	
