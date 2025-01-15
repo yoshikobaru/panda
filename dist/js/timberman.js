@@ -281,13 +281,6 @@ function renderGame() {
 		displaySprite(gameover, 110, -250);
 		displaySprite(play, 350, 900);
 		
-		// Отображаем текущий счет (убираем нижний ноль)
-		for (var i=0; i < score.toString().length; i++) {
-			p = score.toString().substring(i, i+1)
-			m = screenWidth()/2 - 35 * score.toString().length
-			displaySprite(number[p], m + 67 * i, 700)
-		}
-		
 		// Отображаем best score
 		for (var i=0; i < bestscore.toString().length; i++) {
 			p = bestscore.toString().substring(i, i+1)
@@ -308,11 +301,13 @@ function renderGame() {
 		displaySprite(timebar, 285, 130, timescore);
 	}
 	
-	// Display Score
-	for (var i=0; i<score.toString().length; i++) {
-		p = score.toString().substring(i, i+1)
-		m = screenWidth()/2 - 35 * score.toString().length
-		displaySprite(number[p], m + 67 * i, 700)
+	// Display Score - для всех состояний игры
+	if (level == levelPlay || level == levelGameOver) {
+		for (var i=0; i<score.toString().length; i++) {
+			p = score.toString().substring(i, i+1)
+			m = screenWidth()/2 - 35 * score.toString().length
+			displaySprite(number[p], m + 67 * i, 700)
+		}
 	}
 	
 	// Animation status
