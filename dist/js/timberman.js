@@ -56,6 +56,9 @@ for(var n=0; n<10; n++) {
 var timecontainer = loadSprite("/assets/time-container.png", onReady);
 var timebar = loadSprite("/assets/time-bar.png", onReady);	
 
+// В начале файла добавим переменную для хранения последнего счета
+var lastScore = 0;
+
 function onReady() {
 	loadProgress++
 	
@@ -150,6 +153,9 @@ function restartGame() {
 function gameOver() {
 	level = levelGameOver;
 	
+	// Сохраняем текущий счет перед сбросом
+	lastScore = score;
+	
 	// Сохраняем рекорд в localStorage для проверки задач
 	const currentHighScore = localStorage.getItem('timbermanHighScore') || 0;
 	if (score > currentHighScore) {
@@ -222,7 +228,7 @@ function gameOver() {
 	// Отправляем событие с результатом игры
 	const gameOverEvent = new CustomEvent('gameOver', { 
 		detail: { 
-			score: parseInt(score) || 0
+			score: lastScore
 		}
 	});
 	window.dispatchEvent(gameOverEvent);
@@ -275,11 +281,11 @@ function renderGame() {
 		displaySprite(gameover, 110, -250);
 		displaySprite(play, 350, 900);
 		
-		// Отображаем текущий счет вместо/перед best score
-		for (var i=0; i < score.toString().length; i++) {
-			p = score.toString().substring(i, i+1)
-			m = screenWidth()/2 - 35 * score.toString().length
-			displaySprite(number[p], m + 67 * i, 600)  // Изменил Y-координату для текущего счета
+		// Используем lastScore вместо score
+		for (var i=0; i < lastScore.toString().length; i++) {
+			p = lastScore.toString().substring(i, i+1)
+			m = screenWidth()/2 - 35 * lastScore.toString().length
+			displaySprite(number[p], m + 67 * i, 600)
 		}
 		
 		// Отображаем best score
