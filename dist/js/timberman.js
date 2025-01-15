@@ -275,6 +275,14 @@ function renderGame() {
 		displaySprite(gameover, 110, -250);
 		displaySprite(play, 350, 900);
 		
+		// Отображаем текущий счет вместо/перед best score
+		for (var i=0; i < score.toString().length; i++) {
+			p = score.toString().substring(i, i+1)
+			m = screenWidth()/2 - 35 * score.toString().length
+			displaySprite(number[p], m + 67 * i, 600)  // Изменил Y-координату для текущего счета
+		}
+		
+		// Отображаем best score
 		for (var i=0; i < bestscore.toString().length; i++) {
 			p = bestscore.toString().substring(i, i+1)
 			m = screenWidth()/2 - 35 * bestscore.toString().length
