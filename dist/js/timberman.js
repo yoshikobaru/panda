@@ -287,6 +287,13 @@ function renderGame() {
 			m = screenWidth()/2 - 35 * bestscore.toString().length
 			displaySprite(number[p], m + 67 * i, 480)
 		}
+		
+		// Отображаем текущий score тем же способом
+		for (var i=0; i < score.toString().length; i++) {
+			p = score.toString().substring(i, i+1)
+			m = screenWidth()/2 - 35 * score.toString().length
+			displaySprite(number[p], m + 67 * i, 700)
+		}
 	}
 
 	// Display Progress Bar
@@ -301,17 +308,7 @@ function renderGame() {
 		displaySprite(timebar, 285, 130, timescore);
 	}
 	
-	// Display Score - для всех состояний игры
-	if (level == levelPlay || level == levelGameOver) {
-		// Преобразуем score в строку и убедимся, что используем все цифры
-		let scoreStr = score.toString();
-		for (var i = 0; i < scoreStr.length; i++) {
-			// Берем каждую цифру как есть, без деления
-			let digit = parseInt(scoreStr[i]);
-			let m = screenWidth()/2 - 35 * scoreStr.length;
-			displaySprite(number[digit], m + 67 * i, 700);
-		}
-	}
+	
 	
 	// Animation status
 	if (animationActive(man, "cut") === false) {
