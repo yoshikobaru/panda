@@ -654,76 +654,75 @@ const routes = {
         req.on('data', chunk => { body += chunk; });
         
         return new Promise((resolve) => {
-            req.on('end', async () => {
-                try {
-                    const data = JSON.parse(body);
-                    const { telegramId, score } = data;
+          req.on('end', async () => {
+            try {
+              const data = JSON.parse(body);
+              const { telegramId, amount, type } = data;
+              
+              if (!telegramId || !amount || !type) {
+                resolve({
+                  status: 400,
+                  body: { 
+                    success: false,
+                    error: 'Missing required parameters' 
+                  }
+                });
+                return;
+              }
 
-                    // Добавляем проверку на score
-                    if (!telegramId || typeof score !== 'number') {
-                        console.log('Invalid data received:', { telegramId, score });
-                        resolve({ 
-                            status: 400, 
-                            body: { 
-                                error: 'Missing telegramId or invalid score',
-                                received: { telegramId, score } 
-                            } 
-                        });
-                        return;
-                    }
+              const user = await User.findOne({ where: { telegramId } });
+              if (!user) {
+                resolve({
+                  status: 404,
+                  body: { 
+                    success: false,
+                    error: 'User not found' 
+                  }
+                });
+                return;
+              }
 
-                    const user = await User.findOne({ where: { telegramId } });
-                    if (!user) {
-                        resolve({ status: 404, body: { error: 'User not found' } });
-                        return;
-                    }
+              // Обновляем соответствующий баланс
+              if (type === 'invite') {
+                await user.update({
+                  inviteBalance: user.inviteBalance + amount,
+                  totalBalance: user.totalBalance + amount
+                });
+              } else if (type === 'task') {
+                await user.update({
+                  taskBalance: user.taskBalance + amount,
+                  totalBalance: user.totalBalance + amount
+                });
+              }
 
-                    // Убеждаемся, что оба значения являются числами
-                    const currentBalance = parseInt(user.totalBalance || 0);
-                    const scoreToAdd = parseInt(score);
-                    const newTotalBalance = currentBalance + scoreToAdd;
+              // Получаем обновленного пользователя
+              const updatedUser = await User.findOne({ where: { telegramId } });
 
-                    console.log('Updating balance:', {
-                        oldBalance: currentBalance,
-                        score: scoreToAdd,
-                        newTotalBalance
-                    });
-
-                    // Проверяем, что newTotalBalance является числом
-                    if (isNaN(newTotalBalance)) {
-                        resolve({ 
-                            status: 400, 
-                            body: { 
-                                error: 'Invalid balance calculation',
-                                details: { currentBalance, scoreToAdd } 
-                            } 
-                        });
-                        return;
-                    }
-
-                    // Обновляем общий баланс пользователя
-                    await user.update({
-                        totalBalance: newTotalBalance
-                    });
-
-                    resolve({
-                        status: 200,
-                        body: {
-                            success: true,
-                            balances: {
-                                totalBalance: newTotalBalance,
-                                taskBalance: user.taskBalance,
-                                inviteBalance: user.inviteBalance
-                            }
-                        }
-                    });
-                } catch (error) {
-                    console.error('Error updating balances:', error);
-                    resolve({ status: 500, body: { error: 'Internal server error' } });
+              resolve({
+                status: 200,
+                body: {
+                  success: true,
+                  balances: {
+                    total: updatedUser.totalBalance,
+                    task: updatedUser.taskBalance,
+                    invite: updatedUser.inviteBalance
+                  }
                 }
-            });
+              });
+
+            } catch (error) {
+              console.error('Error updating balances:', error);
+              resolve({
+                status: 500,
+                body: { 
+                  success: false,
+                  error: 'Internal server error' 
+                }
+              });
+            }
+          });
         });
-    },
+      },
       '/create-user': async (req, res) => {
   const authError = await authMiddleware(req, res);
   if (authError) return authError;
