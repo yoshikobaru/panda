@@ -150,10 +150,31 @@ function restartGame() {
 function gameOver() {
 	level = levelGameOver;
 
-	// Сохраняем лучший счет игры
 	if (score > bestscore) {
 		bestscore = score;
 		localStorage.setItem('bestscore', bestscore);
+
+		// Отправляем новый рекорд на сервер
+		fetch('/update-high-score', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'x-telegram-init-data': window.Telegram.WebApp.initData
+			},
+			body: JSON.stringify({
+				telegramId: window.Telegram.WebApp.initDataUnsafe.user.id,
+				highScore: score
+			})
+		})
+		.then(response => response.json())
+		.then(data => {
+			if (data.success) {
+				console.log('High score updated successfully');
+			}
+		})
+		.catch(error => {
+			console.error('Error updating high score:', error);
+		});
 	}
 
 	// Добавляем текущий счет к общему DPS и обновляем баланс

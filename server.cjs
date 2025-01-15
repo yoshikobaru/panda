@@ -543,31 +543,32 @@ const routes = {
             return { status: 404, body: { error: 'User not found' } };
         }
 
-        // Получаем топ-100 игроков с наивысшими рекордами
+        // Получаем топ-10 игроков с наивысшими рекордами
         const topPlayers = await User.findAll({
-          where: {
-              highScore: {
-                  [Sequelize.Op.gt]: 0
-              }
-          },
-          attributes: ['telegramId', 'username', 'highScore'],
-          order: [['highScore', 'DESC']],
-          limit: 50  // Уменьшаем лимит до 50
-      });
+            where: {
+                highScore: {
+                    [Sequelize.Op.gt]: 0
+                }
+            },
+            attributes: ['telegramId', 'username', 'highScore'],
+            order: [['highScore', 'DESC']],
+            limit: 10  // Уменьшаем лимит до 10
+        });
 
-        // Преобразуем данные
-        const leaderboardData = topPlayers.map(player => ({
+        // Преобразуем данные и добавляем позицию
+        const leaderboardData = topPlayers.map((player, index) => ({
+            position: index + 1,
             id: player.telegramId,
-            username: player.username,
+            username: player.username || 'Anonymous',
             highScore: player.highScore,
             isCurrentUser: player.telegramId === telegramId
         }));
 
-        // Если текущий пользователь не в топ-100, добавляем его отдельно
+        // Если текущий пользователь не в топ-10, добавляем его отдельно
         if (!leaderboardData.some(player => player.isCurrentUser)) {
             leaderboardData.push({
                 id: currentUser.telegramId,
-                username: currentUser.username,
+                username: currentUser.username || 'Anonymous',
                 highScore: currentUser.highScore,
                 isCurrentUser: true
             });
@@ -576,13 +577,20 @@ const routes = {
         return { 
             status: 200, 
             body: { 
+                success: true,
                 leaderboard: leaderboardData,
                 timestamp: Date.now()
             } 
         };
     } catch (error) {
         console.error('Error getting leaderboard:', error);
-        return { status: 500, body: { error: 'Internal server error' } };
+        return { 
+            status: 500, 
+            body: { 
+                success: false,
+                error: 'Internal server error' 
+            } 
+        };
     }
 },
 '/reward': async (req, res, query) => {
