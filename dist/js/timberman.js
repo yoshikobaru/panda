@@ -225,7 +225,11 @@ function gameOver() {
 		console.error('Error updating balance:', error);
 	});
 
+
+	const totalGameDPS = parseInt(localStorage.getItem('totalGameDPS')) || 0; 
+ localStorage.setItem('totalGameDPS', (totalGameDPS + score).toString());
 	// Отправляем событие с результатом игры
+	
 	const gameOverEvent = new CustomEvent('gameOver', { 
 		detail: { 
 			score: lastScore
@@ -308,7 +312,17 @@ function renderGame() {
 		displaySprite(timebar, 285, 130, timescore);
 	}
 	
-	
+	// Display Score - для всех состояний игры
+	if (level == levelPlay || level == levelGameOver) {
+		// Преобразуем score в строку и убедимся, что используем все цифры
+		let scoreStr = score.toString();
+		for (var i = 0; i < scoreStr.length; i++) {
+			// Берем каждую цифру как есть, без деления
+			let digit = parseInt(scoreStr[i]);
+			let m = screenWidth()/2 - 35 * scoreStr.length;
+			displaySprite(number[digit], m + 67 * i, 700);
+		}
+	}
 	
 	// Animation status
 	if (animationActive(man, "cut") === false) {
