@@ -245,6 +245,10 @@ function gameOver() {
 	// Очистка и пересоздание дерева
 	trunk = [];
 	initTrunk();
+
+	// Увеличиваем счетчик сыгранных игр
+	const totalGamesPlayed = parseInt(localStorage.getItem('totalGamesPlayed')) || 0;
+	localStorage.setItem('totalGamesPlayed', (totalGamesPlayed + 1).toString());
 }
 
 function renderGame() {
