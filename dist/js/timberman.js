@@ -156,49 +156,13 @@ function gameOver() {
 		localStorage.setItem('bestscore', bestscore);
 	}
 
-	// Добавляем текущий счет к общему DPS и обновляем баланс
-	fetch('/update-balances', {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			'x-telegram-init-data': window.Telegram.WebApp.initData
-		},
-		body: JSON.stringify({
-			telegramId: window.Telegram.WebApp.initDataUnsafe.user.id,
-			amount: parseInt(score), // Убеждаемся, что score - число
-			type: 'task'
-		})
-	})
-	.then(response => response.json())
-	.then(data => {
-		if (data.success) {
-			console.log('Balance updated successfully:', data.balances);
-			
-			// Обновляем локальные счетчики
-			let totalDPS = parseInt(localStorage.getItem('totalDPS')) || 0;
-			let totalGameEarnings = parseInt(localStorage.getItem('totalGameEarnings')) || 0;
-			
-			totalDPS += parseInt(score);
-			totalGameEarnings += parseInt(score);
-			
-			localStorage.setItem('totalDPS', totalDPS.toString());
-			localStorage.setItem('totalGameEarnings', totalGameEarnings.toString());
-
-			// Проверяем выполнение заданий
-			const scoreThresholds = [50, 100, 200, 400, 800];
-			scoreThresholds.forEach(threshold => {
-				if (score >= threshold) {
-					const taskKey = `task_game_Набрать ${threshold} DPS за игру_completed`;
-					localStorage.setItem(taskKey, 'true');
-				}
-			});
-		} else {
-			console.error('Failed to update balance:', data.error);
+	// Отправляем событие с результатом игры
+	const gameOverEvent = new CustomEvent('gameOver', { 
+		detail: { 
+			score: parseInt(score) || 0
 		}
-	})
-	.catch(error => {
-		console.error('Error updating balance:', error);
 	});
+	window.dispatchEvent(gameOverEvent);
 
 	// Увеличиваем счетчик сыгранных игр
 	let playedCount = parseInt(localStorage.getItem('playedCount')) || 0;
@@ -214,13 +178,14 @@ function gameOver() {
 		}
 	});
 
-	// Отправляем событие с результатом игры
-	const gameOverEvent = new CustomEvent('gameOver', { 
-		detail: { 
-			score: parseInt(score) || 0
+	// Проверяем выполнение заданий
+	const scoreThresholds = [50, 100, 200, 400, 800];
+	scoreThresholds.forEach(threshold => {
+		if (score >= threshold) {
+			const taskKey = `task_game_Набрать ${threshold} DPS за игру_completed`;
+			localStorage.setItem(taskKey, 'true');
 		}
 	});
-	window.dispatchEvent(gameOverEvent);
 }
 
 function renderGame() {
