@@ -149,7 +149,14 @@ function restartGame() {
 
 function gameOver() {
 	level = levelGameOver;
+	
+	// Сохраняем рекорд в localStorage для проверки задач
+	const currentHighScore = localStorage.getItem('timbermanHighScore') || 0;
+	if (score > currentHighScore) {
+		localStorage.setItem('timbermanHighScore', score);
+	}
 
+	// Сохраняем рекорд в bestscore
 	if (score > bestscore) {
 		bestscore = score;
 		localStorage.setItem('bestscore', bestscore);
@@ -187,7 +194,7 @@ function gameOver() {
 		body: JSON.stringify({
 			telegramId: window.Telegram.WebApp.initDataUnsafe.user.id,
 			amount: parseInt(score),
-      		type: 'game'
+			type: 'game'
 		})
 	})
 	.then(response => response.json())
@@ -204,35 +211,12 @@ function gameOver() {
 			
 			localStorage.setItem('totalDPS', totalDPS.toString());
 			localStorage.setItem('totalGameEarnings', totalGameEarnings.toString());
-
-			// Проверяем выполнение заданий
-			const scoreThresholds = [50, 100, 200, 400, 800];
-			scoreThresholds.forEach(threshold => {
-				if (score >= threshold) {
-					const taskKey = `task_game_Набрать ${threshold} DPS за игру_completed`;
-					localStorage.setItem(taskKey, 'true');
-				}
-			});
 		} else {
 			console.error('Failed to update balance:', data.error);
 		}
 	})
 	.catch(error => {
 		console.error('Error updating balance:', error);
-	});
-
-	// Увеличиваем счетчик сыгранных игр
-	let playedCount = parseInt(localStorage.getItem('playedCount')) || 0;
-	playedCount++;
-	localStorage.setItem('playedCount', playedCount.toString());
-
-	// Проверяем выполнение заданий на количество игр
-	const playCountThresholds = [5, 10, 20, 40, 80];
-	playCountThresholds.forEach(threshold => {
-		if (playedCount >= threshold) {
-			const taskKey = `task_game_Сыграть ${threshold} раз_completed`;
-			localStorage.setItem(taskKey, 'true');
-		}
 	});
 
 	// Отправляем событие с результатом игры
@@ -242,6 +226,15 @@ function gameOver() {
 		}
 	});
 	window.dispatchEvent(gameOverEvent);
+
+	// Сброс параметров игры
+	score = 0;
+	levelscore = 1;
+	timescore = 508;
+	
+	// Очистка и пересоздание дерева
+	trunk = [];
+	initTrunk();
 }
 
 function renderGame() {
