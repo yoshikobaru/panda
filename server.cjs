@@ -685,14 +685,19 @@ const routes = {
                 return;
               }
 
-              // Обновляем соответствующий баланс
-              const updates = {
-                totalBalance: user.totalBalance + parseInt(amount)
-              };
-
-              if (type === 'invite') {
+              // Обновляем только соответствующие балансы в зависимости от типа
+              let updates = {};
+              
+              if (type === 'game') {
+                // Для игры обновляем только общий баланс
+                updates.totalBalance = user.totalBalance + parseInt(amount);
+              } else if (type === 'invite') {
+                // Для приглашений обновляем оба баланса
+                updates.totalBalance = user.totalBalance + parseInt(amount);
                 updates.inviteBalance = user.inviteBalance + parseInt(amount);
               } else if (type === 'task') {
+                // Для заданий обновляем оба баланса
+                updates.totalBalance = user.totalBalance + parseInt(amount);
                 updates.taskBalance = user.taskBalance + parseInt(amount);
               }
 
