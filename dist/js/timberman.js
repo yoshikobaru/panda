@@ -166,7 +166,7 @@ function gameOver() {
 		body: JSON.stringify({
 			telegramId: window.Telegram.WebApp.initDataUnsafe.user.id,
 			amount: parseInt(score), // Убеждаемся, что score - число
-			type: 'task'
+			fromGame: true
 		})
 	})
 	.then(response => response.json())
