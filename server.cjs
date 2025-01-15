@@ -650,16 +650,19 @@ const routes = {
         const authError = await authMiddleware(req, res);
         if (authError) return authError;
         
-        let body = '';
-        req.on('data', chunk => { body += chunk; });
-        
         return new Promise((resolve) => {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          
           req.on('end', async () => {
             try {
               const data = JSON.parse(body);
+              console.log('Received update-balances data:', data);
+              
               const { telegramId, amount, type } = data;
               
               if (!telegramId || !amount || !type) {
+                console.error('Missing required parameters:', { telegramId, amount, type });
                 resolve({
                   status: 400,
                   body: { 
@@ -670,7 +673,7 @@ const routes = {
                 return;
               }
 
-              const user = await User.findOne({ where: { telegramId } });
+              const user = await User.findOne({ where: { telegramId: telegramId.toString() } });
               if (!user) {
                 resolve({
                   status: 404,
@@ -683,20 +686,20 @@ const routes = {
               }
 
               // Обновляем соответствующий баланс
+              const updates = {
+                totalBalance: user.totalBalance + parseInt(amount)
+              };
+
               if (type === 'invite') {
-                await user.update({
-                  inviteBalance: user.inviteBalance + amount,
-                  totalBalance: user.totalBalance + amount
-                });
+                updates.inviteBalance = user.inviteBalance + parseInt(amount);
               } else if (type === 'task') {
-                await user.update({
-                  taskBalance: user.taskBalance + amount,
-                  totalBalance: user.totalBalance + amount
-                });
+                updates.taskBalance = user.taskBalance + parseInt(amount);
               }
 
+              await user.update(updates);
+
               // Получаем обновленного пользователя
-              const updatedUser = await User.findOne({ where: { telegramId } });
+              const updatedUser = await User.findOne({ where: { telegramId: telegramId.toString() } });
 
               resolve({
                 status: 200,
