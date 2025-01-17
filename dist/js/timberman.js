@@ -249,6 +249,9 @@ function gameOver() {
 	// Увеличиваем счетчик сыгранных игр
 	const totalGamesPlayed = parseInt(localStorage.getItem('totalGamesPlayed')) || 0;
 	localStorage.setItem('totalGamesPlayed', (totalGamesPlayed + 1).toString());
+
+	// В функции gameOver добавьте обновление события balanceUpdated
+	window.dispatchEvent(new CustomEvent('balanceUpdated'));
 }
 
 function renderGame() {
