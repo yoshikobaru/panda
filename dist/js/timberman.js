@@ -356,6 +356,15 @@ function renderGame() {
 				break;
 				
 			case levelLoad:
+				if (mouseX() <= screenWidth()/2) {
+					man.data = "left";
+					man.x = 263;
+					flipSprite(man, 1, 1);
+				} else {
+					man.data = "right";
+					man.x = 800;
+					flipSprite(man, -1, 1);
+				}
 				man.action = true;
 				break;
     
