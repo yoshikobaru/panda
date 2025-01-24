@@ -1003,43 +1003,44 @@ const routes = {
             // Добавляем задержку перед проверкой
             await new Promise(resolve => setTimeout(resolve, 2000));
 
-            const checkMembership = async (telegramId, channelUsername) => {
+            async function checkMembership(telegramId, channelUsername) {
               try {
-                // Добавляем @ если его нет
-                const formattedUsername = channelUsername.startsWith('@') ? channelUsername : `@${channelUsername}`;
-                
-                // Получаем ID канала
-                const chat = await bot.telegram.getChat(formattedUsername);
-                const chatId = chat.id;
+                // Пробуем сначала получить информацию о канале
+                const chat = await bot.telegram.getChat('@' + channelUsername)
+                  .catch(err => {
+                    console.log(`Info: Cannot get chat info for ${channelUsername}, trying direct membership check`);
+                    return null;
+                  });
 
+                // Проверяем членство пользователя
                 try {
-                  const member = await bot.telegram.getChatMember(chatId, telegramId);
-                  return ['creator', 'administrator', 'member'].includes(member.status);
-                } catch (error) {
-                  console.error('Error checking membership status:', error);
-                  
-                  try {
-                    await bot.telegram.sendChatAction(chatId, 'typing');
-                    return true;
-                  } catch (sendError) {
-                    console.error('Error sending chat action:', sendError);
-                    return false;
+                  const member = await bot.telegram.getChatMember('@' + channelUsername, telegramId);
+                  const isSubscribed = ['member', 'administrator', 'creator'].includes(member.status);
+                  return isSubscribed;
+                } catch (err) {
+                  // Если не удалось проверить напрямую, пробуем альтернативный метод
+                  if (err.message.includes('member list is inaccessible')) {
+                    console.log(`Info: Using alternative check method for ${channelUsername}`);
+                    try {
+                      // Пробуем отправить служебное действие в чат
+                      await bot.telegram.sendChatAction('@' + channelUsername, 'typing');
+                      return true; // Если удалось отправить действие, значит пользователь подписан
+                    } catch (actionErr) {
+                      if (actionErr.message.includes('bot is not a member')) {
+                        console.log(`Warning: Bot needs to be added to ${channelUsername}`);
+                      }
+                      return false;
+                    }
                   }
-                }
-              } catch (error) {
-                console.error('Error in membership check:', error);
-                
-                // Пробуем альтернативный метод - прямая проверка через username
-                try {
-                  const formattedUsername = channelUsername.startsWith('@') ? channelUsername : `@${channelUsername}`;
-                  const member = await bot.telegram.getChatMember(formattedUsername, telegramId);
-                  return ['creator', 'administrator', 'member'].includes(member.status);
-                } catch (directError) {
-                  console.error('Error in direct membership check:', directError);
+                  console.log(`Info: User ${telegramId} is not subscribed to ${channelUsername}`);
                   return false;
                 }
+              } catch (error) {
+                // Логируем ошибку, но не как критическую
+                console.log(`Info: Alternative check failed for ${channelUsername}:`, error.message);
+                return false;
               }
-            };
+            }
 
             const isSubscribed = await checkMembership(telegramId, channelUsername);
             
