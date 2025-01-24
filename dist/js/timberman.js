@@ -264,33 +264,86 @@ function gameOver() {
 	if (!shareBtn) {
 		shareBtn = document.createElement('button');
 		shareBtn.id = 'shareButton';
-		shareBtn.innerHTML = '📱 Share Story';
+		shareBtn.innerHTML = `
+			<div style="display: flex; align-items: center; gap: 8px;">
+				<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<path d="M16 8L8 16M8 8L16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+					<path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2"/>
+				</svg>
+				<span>Share Story</span>
+			</div>
+		`;
 		shareBtn.style.cssText = `
 			position: fixed;
 			left: 50%;
 			transform: translateX(-50%);
 			bottom: 100px;
-			padding: 12px 24px;
-			background-color: #4CAF50;
+			padding: 16px 32px;
+			background: linear-gradient(135deg, #FF6B6B, #FF8E53);
 			color: white;
 			border: none;
-			border-radius: 8px;
+			border-radius: 16px;
 			font-size: 18px;
+			font-weight: 600;
 			cursor: pointer;
 			z-index: 9999;
-			font-family: Arial, sans-serif;
-			box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-			transition: all 0.3s ease;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+			box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+			backdrop-filter: blur(10px);
+			border: 1px solid rgba(255, 255, 255, 0.1);
+			text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+			animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 		`;
-		
-		shareBtn.onmouseover = function() {
-			this.style.backgroundColor = '#45a049';
+
+		// Добавляем keyframes для анимации
+		const style = document.createElement('style');
+		style.textContent = `
+			@keyframes slideUp {
+				from {
+					transform: translate(-50%, 100%);
+					opacity: 0;
+				}
+				to {
+					transform: translate(-50%, 0);
+					opacity: 1;
+				}
+			}
+
+			#shareButton:hover {
+				transform: translateX(-50%) translateY(-2px);
+				box-shadow: 0 8px 20px rgba(255, 107, 107, 0.6);
+				background: linear-gradient(135deg, #FF8E53, #FF6B6B);
+			}
+
+			#shareButton:active {
+				transform: translateX(-50%) translateY(0);
+				box-shadow: 0 4px 10px rgba(255, 107, 107, 0.4);
+			}
+
+			@media (max-width: 768px) {
+				#shareButton {
+					padding: 14px 28px;
+					font-size: 16px;
+				}
+			}
+		`;
+		document.head.appendChild(style);
+
+		// Добавляем эффект пульсации
+		let pulseTimeout;
+		const startPulse = () => {
+			shareBtn.style.transform = 'translateX(-50%) scale(1.05)';
+			setTimeout(() => {
+				shareBtn.style.transform = 'translateX(-50%) scale(1)';
+			}, 200);
 		};
-		shareBtn.onmouseout = function() {
-			this.style.backgroundColor = '#4CAF50';
-		};
-		
+
+		pulseTimeout = setInterval(startPulse, 3000);
+
+		// Очищаем интервал при клике
 		shareBtn.onclick = function() {
+			clearInterval(pulseTimeout);
 			if (window.Telegram?.WebApp) {
 				const username = window.Telegram.WebApp.initDataUnsafe?.user?.username || 'Player';
 				
@@ -319,7 +372,7 @@ function gameOver() {
 				.catch(error => console.error('Error getting referral link:', error));
 			}
 		};
-		
+
 		document.body.appendChild(shareBtn);
 	} else {
 		shareBtn.style.display = 'block';
