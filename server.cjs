@@ -1096,34 +1096,8 @@ const serveStaticFile = (filePath, res) => {
         res.end('Server error: ' + error.code);
       }
     } else {
-      // Добавляем специальные заголовки для WebApp
-      const headers = {
-        'Content-Type': contentType,
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      };
-
-      // Если это HTML файл, добавляем скрипт для инициализации WebApp
-      if (contentType === 'text/html') {
-        let htmlContent = content.toString('utf-8');
-        const webAppScript = `
-          <script>
-            window.addEventListener('load', function() {
-              if (window.Telegram?.WebApp) {
-                window.Telegram.WebApp.ready();
-                window.Telegram.WebApp.expand();
-              }
-            });
-          </script>
-        `;
-        // Вставляем скрипт перед закрывающим тегом </head>
-        htmlContent = htmlContent.replace('</head>', webAppScript + '</head>');
-        content = Buffer.from(htmlContent, 'utf-8');
-      }
-
-      res.writeHead(200, headers);
-      res.end(content);
+      res.writeHead(200, { 'Content-Type': contentType });
+      res.end(content, 'utf-8');
     }
   });
 };
