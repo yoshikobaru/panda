@@ -653,6 +653,58 @@ const routes = {
           }
       };
   }
+},
+'/create-story': async (req, res, query) => {
+    const { telegramId, score } = query;
+    
+    if (!telegramId || !score) {
+        return { 
+            status: 400, 
+            body: { error: 'Missing required parameters' } 
+        };
+    }
+
+    try {
+        const user = await User.findOne({ where: { telegramId } });
+        if (!user) {
+            return { 
+                status: 404, 
+                body: { error: 'User not found' } 
+            };
+        }
+
+        // Отправляем команду для создания истории
+        await bot.telegram.sendMessage(telegramId, 'Share your achievement!', {
+            reply_markup: {
+                inline_keyboard: [[{
+                    text: '📱 Share Story',
+                    story: {
+                        background_type: 'gradient',
+                        background: {
+                            colors: ['#223522', '#4CAF50'],
+                            rotation: 45
+                        },
+                        text: `🎮 ${user.username}\n\n⭐️ Scored ${score} points\nin TimberPanda!\n\n🎯 Can you beat this?`,
+                        text_color: '#FFFFFF'
+                    }
+                }]]
+            }
+        });
+
+        return {
+            status: 200,
+            body: { 
+                success: true,
+                message: 'Story creation dialog sent' 
+            }
+        };
+    } catch (error) {
+        console.error('Error creating story:', error);
+        return { 
+            status: 500, 
+            body: { error: 'Failed to create story' } 
+        };
+    }
 }
 },
     POST: {

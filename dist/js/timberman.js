@@ -293,9 +293,18 @@ function gameOver() {
 		shareBtn.onclick = function() {
 			if (window.Telegram?.WebApp) {
 				const username = window.Telegram.WebApp.initDataUnsafe?.user?.username || 'Player';
-				window.Telegram.WebApp.share({
-					text: `🎮 ${username} scored ${lastScore} points in TimberPanda!\n\n🎯 Can you beat this score?`
-				});
+				const telegramId = window.Telegram.WebApp.initDataUnsafe?.user?.id;
+				
+				fetch(`/create-story?telegramId=${telegramId}&score=${lastScore}`)
+					.then(response => response.json())
+					.then(data => {
+						if (!data.success) {
+							console.error('Failed to create story:', data.error);
+						}
+					})
+					.catch(error => {
+						console.error('Error creating story:', error);
+					});
 			}
 		};
 		
