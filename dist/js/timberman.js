@@ -299,10 +299,11 @@ function renderGame() {
 			displaySprite(number[p], m + 67 * i, 480)
 		}
 		
-		// Отображаем текущий score тем же способом
-		for (var i=0; i < score.toString().length; i++) {
-			p = score.toString().substring(i, i+1)
-			m = screenWidth()/2 - 35 * score.toString().length
+		// Отображаем последний score вместо текущего
+		let scoreToDisplay = lastScore.toString(); // Используем lastScore вместо score
+		for (var i=0; i < scoreToDisplay.length; i++) {
+			p = scoreToDisplay.substring(i, i+1)
+			m = screenWidth()/2 - 35 * scoreToDisplay.length
 			displaySprite(number[p], m + 67 * i, 700)
 		}
 	}
