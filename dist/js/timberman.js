@@ -59,6 +59,10 @@ var timebar = loadSprite("/assets/time-bar.png", onReady);
 // В начале файла добавим переменную для хранения последнего счета
 var lastScore = 0;
 
+// Добавляем новую кнопку Share
+var shareButton = loadSprite("/assets/share.png", onReady);
+countSprites++; // Увеличиваем количество спрайтов
+
 function onReady() {
 	loadProgress++
 	
@@ -252,6 +256,19 @@ function gameOver() {
 
 	// Обновляем баланс
 	window.dispatchEvent(new CustomEvent('balanceUpdated'));
+
+	// Добавляем кнопку шаринга в сторис
+	displaySprite(play, 350, 800); // Сдвигаем кнопку Play немного выше
+	
+	// Добавляем новую кнопку Share
+	displaySprite(shareButton, 350, 950); // Новая кнопка под Play
+	
+	// Отображаем счет
+	for (var i = 0; i < score.toString().length; i++) {
+		let digit = parseInt(score.toString()[i]);
+		let m = screenWidth()/2 - 35 * score.toString().length;
+		displaySprite(number[digit], m + 67 * i, 700);
+	}
 }
 
 function renderGame() {
@@ -290,7 +307,8 @@ function renderGame() {
 	if (level == levelGameOver) {
 		displaySprite(rip, man.x, 1240);
 		displaySprite(gameover, 110, -250);
-		displaySprite(play, 350, 900);
+		displaySprite(play, 350, 800);
+		displaySprite(shareButton, 350, 950);
 		
 		// Отображаем best score
 		for (var i=0; i < bestscore.toString().length; i++) {
@@ -380,6 +398,18 @@ function renderGame() {
 				}
 				man.action = true;
 				break;
+				
+			case levelGameOver:
+				// Проверяем клик по кнопке Share
+				if (mouseY() >= 900 && mouseY() <= 1000 && mouseX() >= 300 && mouseX() <= 400) {
+					shareScore();
+				}
+				// Проверяем клик по кнопке Play (существующий функционал)
+				else if (mouseY() >= 750 && mouseY() <= 850 && mouseX() >= 300 && mouseX() <= 400) {
+					restartGame();
+					level = levelLoad;
+				}
+				break;
 		}
 	}
 	
@@ -426,3 +456,13 @@ function renderGame() {
 	}
 	requestAnimationFrame(renderGame);
 };
+
+// Функция для шаринга в сторис
+function shareScore() {
+	if (window.Telegram?.WebApp) {
+		const text = `🎮 I scored ${lastScore} points in Timberman!\n\n🌲 Can you beat my score?\n\n🎯 Play now:`;
+		const url = 'https://t.me/your_bot_username'; // Замените на ваш URL
+
+		window.Telegram.WebApp.switchInlineQuery(text, ['users', 'groups', 'channels']);
+	}
+}
