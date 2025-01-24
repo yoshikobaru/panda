@@ -1001,14 +1001,33 @@ const routes = {
             }
 
             try {
-              // Проверяем статус участника в канале
-              const chatMember = await bot.telegram.getChatMember(
-                `@${channelUsername}`, 
-                telegramId
-              );
-              
-              // Проверяем статус подписки
-              const isSubscribed = ['creator', 'administrator', 'member'].includes(chatMember.status);
+              // Добавляем несколько попыток проверки с задержкой
+              const checkMembership = async (attempts = 3) => {
+                try {
+                  const chatMember = await bot.telegram.getChatMember(
+                    `@${channelUsername}`, 
+                    telegramId
+                  );
+                  
+                  const isSubscribed = ['creator', 'administrator', 'member'].includes(chatMember.status);
+                  
+                  if (!isSubscribed && attempts > 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    return checkMembership(attempts - 1);
+                  }
+                  
+                  return isSubscribed;
+                } catch (error) {
+                  console.error('Error in membership check attempt:', error);
+                  if (attempts > 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    return checkMembership(attempts - 1);
+                  }
+                  return false;
+                }
+              };
+
+              const isSubscribed = await checkMembership();
               
               resolve({
                 status: 200,
