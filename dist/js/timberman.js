@@ -259,8 +259,6 @@ function gameOver() {
 
 	// Добавляем кнопку шаринга в сторис
 	displaySprite(play, 350, 800); // Сдвигаем кнопку Play немного выше
-	
-	// Добавляем новую кнопку Share
 	displaySprite(shareButton, 350, 950); // Новая кнопка под Play
 	
 	// Отображаем счет
