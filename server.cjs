@@ -1209,33 +1209,32 @@ bot.on('callback_query', async (ctx) => {
     try {
         const data = JSON.parse(ctx.callbackQuery.data);
         if (data.action === 'create_story') {
-            await ctx.telegram.sendStory(ctx.from.id, {
-                background_type: 'gradient',
-                background: {
-                    colors: ['#223522', '#4CAF50'],
-                    rotation: 45
-                },
+            // Используем правильный метод для создания истории
+            const storyParams = {
+                url: 'https://pandapp.ru/assets/icon.png',
                 text: `🎮 ${data.username}\n\n⭐️ Scored ${data.score} points\nin TimberPanda!\n\n🎯 Can you beat this?`,
-                text_color: '#FFFFFF'
+                widget_link: {
+                    url: 'https://pandapp.ru',
+                    name: 'Play TimberPanda'
+                }
+            };
+            
+            // Отправляем пользователю ссылку для создания истории
+            await ctx.telegram.sendMessage(ctx.from.id, 'Create your story:', {
+                reply_markup: {
+                    inline_keyboard: [[{
+                        text: '📱 Create Story',
+                        web_app: {
+                            url: `https://t.me/share/story?${new URLSearchParams(storyParams).toString()}`
+                        }
+                    }]]
+                }
             });
-            await ctx.answerCallbackQuery('Creating story...');
+            
+            await ctx.answerCallbackQuery();
         }
     } catch (error) {
         console.error('Error in callback query:', error);
         await ctx.answerCallbackQuery('Failed to create story');
-    }
-});
-
-bot.on('web_app_data', async (ctx) => {
-    try {
-        const data = JSON.parse(ctx.webAppData.data);
-        if (data.type === 'story') {
-            await ctx.replyWithStory({
-                text: data.text,
-                background_color: data.background_color
-            });
-        }
-    } catch (error) {
-        console.error('Error handling story creation:', error);
     }
 });

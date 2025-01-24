@@ -293,23 +293,18 @@ function gameOver() {
 		shareBtn.onclick = function() {
 			if (window.Telegram?.WebApp) {
 				const username = window.Telegram.WebApp.initDataUnsafe?.user?.username || 'Player';
-				window.Telegram.WebApp.showPopup({
-					title: 'Share Story',
-					message: 'Do you want to share your achievement?',
-					buttons: [{
-						id: "share",
-						type: "default",
-						text: "Share"
-					}]
-				}, (buttonId) => {
-					if (buttonId === 'share') {
-						window.Telegram.WebApp.sendData(JSON.stringify({
-							type: 'story',
-							text: `🎮 ${username} scored ${lastScore} points in TimberPanda!\n\n🎯 Can you beat this score?`,
-							background_color: '#223522'
-						}));
+				
+				// Используем shareToStory с URL изображения и параметрами
+				window.Telegram.WebApp.shareToStory(
+					'https://pandapp.ru/assets/icon.png', // URL вашего фонового изображения
+					{
+						text: `🎮 ${username} scored ${lastScore} points in TimberPanda!\n\n🎯 Can you beat this score?`,
+						widget_link: {
+							url: 'https://pandapp.ru',
+							name: 'Play TimberPanda'
+						}
 					}
-				});
+				);
 			}
 		};
 		
