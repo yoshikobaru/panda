@@ -60,7 +60,7 @@ var timebar = loadSprite("/assets/time-bar.png", onReady);
 var lastScore = 0;
 
 // Добавляем новую кнопку Share
-var shareButton = loadSprite("/assets/share.png", onReady);
+var shareButton = loadSprite("/assets/icon.png", onReady);
 countSprites++; // Увеличиваем количество спрайтов
 
 function onReady() {
@@ -461,7 +461,7 @@ function renderGame() {
 function shareScore() {
 	if (window.Telegram?.WebApp) {
 		const text = `🎮 I scored ${lastScore} points in Timberman!\n\n🌲 Can you beat my score?\n\n🎯 Play now:`;
-		const url = 'https://t.me/your_bot_username'; // Замените на ваш URL
+		const url = 'https://pandapp.ru'; // Замените на ваш URL
 
 		window.Telegram.WebApp.switchInlineQuery(text, ['users', 'groups', 'channels']);
 	}
