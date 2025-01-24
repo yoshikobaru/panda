@@ -146,7 +146,7 @@ function addTrunk() {
 }
 
 function restartGame() {
-	// Скрываем кнопку шаринга при рестарте игры
+	// Скрываем кнопку шаринга при рестарте
 	const shareBtn = document.getElementById('shareButton');
 	if (shareBtn) {
 		shareBtn.style.display = 'none';
@@ -259,33 +259,48 @@ function gameOver() {
 	// Обновляем баланс
 	window.dispatchEvent(new CustomEvent('balanceUpdated'));
 
-	// Создаем HTML кнопку для шаринга, если её еще нет
+	// Создаем HTML кнопку для шаринга
 	let shareBtn = document.getElementById('shareButton');
 	if (!shareBtn) {
 		shareBtn = document.createElement('button');
 		shareBtn.id = 'shareButton';
 		shareBtn.innerHTML = '📤 Share Score';
 		shareBtn.style.cssText = `
-			position: absolute;
+			position: fixed;
 			left: 50%;
 			transform: translateX(-50%);
-			top: 950px;
-			padding: 10px 20px;
+			bottom: 100px;
+			padding: 12px 24px;
 			background-color: #4CAF50;
 			color: white;
 			border: none;
-			border-radius: 5px;
-			font-size: 16px;
+			border-radius: 8px;
+			font-size: 18px;
 			cursor: pointer;
-			z-index: 1000;
+			z-index: 9999;
+			font-family: Arial, sans-serif;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+			transition: all 0.3s ease;
 		`;
+		
+		// Добавляем эффект при наведении
+		shareBtn.onmouseover = function() {
+			this.style.backgroundColor = '#45a049';
+		};
+		shareBtn.onmouseout = function() {
+			this.style.backgroundColor = '#4CAF50';
+		};
+		
 		shareBtn.onclick = function() {
 			if (window.Telegram?.WebApp) {
-				const text = `🎮 I scored ${lastScore} points in TimberPanda!\n\n🌲 Can you beat my score?\n\n🎯 Join the challenge:`;
+				const username = window.Telegram.WebApp.initDataUnsafe?.user?.username || 'Player';
+				const text = `🎮 ${username} scored ${lastScore} points in TimberPanda!\n\n🌲 Can you beat this score?\n\n🎯 Join now and start chopping!`;
 				window.Telegram.WebApp.switchInlineQuery(text, ['users', 'groups', 'channels']);
 			}
 		};
-		document.getElementById('game-container').appendChild(shareBtn);
+		
+		// Добавляем кнопку прямо в body, чтобы избежать проблем с контейнером
+		document.body.appendChild(shareBtn);
 	} else {
 		shareBtn.style.display = 'block';
 	}
