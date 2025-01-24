@@ -264,7 +264,7 @@ function gameOver() {
 	if (!shareBtn) {
 		shareBtn = document.createElement('button');
 		shareBtn.id = 'shareButton';
-		shareBtn.innerHTML = '📤 Share Score';
+		shareBtn.innerHTML = '📱 Share Story';
 		shareBtn.style.cssText = `
 			position: fixed;
 			left: 50%;
@@ -283,7 +283,6 @@ function gameOver() {
 			transition: all 0.3s ease;
 		`;
 		
-		// Добавляем эффект при наведении
 		shareBtn.onmouseover = function() {
 			this.style.backgroundColor = '#45a049';
 		};
@@ -294,12 +293,14 @@ function gameOver() {
 		shareBtn.onclick = function() {
 			if (window.Telegram?.WebApp) {
 				const username = window.Telegram.WebApp.initDataUnsafe?.user?.username || 'Player';
-				const text = `🎮 ${username} scored ${lastScore} points in TimberPanda!\n\n🌲 Can you beat this score?\n\n🎯 Join now and start chopping!`;
-				window.Telegram.WebApp.switchInlineQuery(text, ['users', 'groups', 'channels']);
+				window.Telegram.WebApp.openStory({
+					text: `🎮 ${username}\n\n🌟 Scored ${lastScore} points\nin TimberPanda!\n\n🎯 Can you beat this?`,
+					background_color: '#223522', // Темно-зеленый фон
+					gradient_color: '#4CAF50'    // Светло-зеленый градиент
+				});
 			}
 		};
 		
-		// Добавляем кнопку прямо в body, чтобы избежать проблем с контейнером
 		document.body.appendChild(shareBtn);
 	} else {
 		shareBtn.style.display = 'block';
