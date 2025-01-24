@@ -27,6 +27,33 @@ resizeScreen(true);
 // Load sprites
 var background = loadSprite("/assets/background.png", onReady);
 
+// Load sounds - делаем загрузку звука без onReady callback
+var deathSound = new Audio('/assets/death.mp3');
+deathSound.addEventListener('canplaythrough', function() {
+    loadProgress++; // Увеличиваем счетчик загрузки когда звук готов
+}, { once: true });
+
+deathSound.addEventListener('error', function() {
+    // Если MP3 не загрузился, пробуем WAV
+    deathSound = new Audio('/assets/death.wav');
+    deathSound.addEventListener('canplaythrough', function() {
+        loadProgress++;
+    }, { once: true });
+    
+    deathSound.addEventListener('error', function() {
+        // Если WAV не загрузился, пробуем OGG
+        deathSound = new Audio('/assets/death.ogg');
+        deathSound.addEventListener('canplaythrough', function() {
+            loadProgress++;
+        }, { once: true });
+        
+        deathSound.addEventListener('error', function() {
+            console.log('Failed to load any audio format');
+            loadProgress++; // Увеличиваем счетчик даже при ошибке, чтобы игра могла продолжиться
+        });
+    });
+});
+
 // Intro
 var clic = loadSprite("/assets/clic.png", onReady);
 var or = loadSprite("/assets/or.png", onReady);
@@ -153,6 +180,11 @@ function restartGame() {
 
 function gameOver() {
 	level = levelGameOver;
+	
+	if (deathSound) {
+		deathSound.currentTime = 0; // Перематываем на начало
+		deathSound.play().catch(e => console.log('Sound playback failed:', e));
+	}
 	
 	// Сохраняем текущий счет перед сбросом
 	lastScore = score;
@@ -356,15 +388,6 @@ function renderGame() {
 				break;
 				
 			case levelLoad:
-				if (mouseX() <= screenWidth()/2) {
-					man.data = "left";
-					man.x = 263;
-					flipSprite(man, 1, 1);
-				} else {
-					man.data = "right";
-					man.x = 800;
-					flipSprite(man, -1, 1);
-				}
 				man.action = true;
 				break;
     
