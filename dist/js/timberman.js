@@ -146,6 +146,7 @@ function addTrunk() {
 }
 
 function restartGame() {
+	score = 0; // Обнуляем счет при рестарте игры
 	initTrunk();
 	level = levelMenu;
 }
@@ -238,7 +239,6 @@ function gameOver() {
 	window.dispatchEvent(gameOverEvent);
 
 	// Сброс параметров игры
-	score = 0;
 	levelscore = 1;
 	timescore = 508;
 	
@@ -250,7 +250,7 @@ function gameOver() {
 	const totalGamesPlayed = parseInt(localStorage.getItem('totalGamesPlayed')) || 0;
 	localStorage.setItem('totalGamesPlayed', (totalGamesPlayed + 1).toString());
 
-	// В функции gameOver добавьте обновление события balanceUpdated
+	// Обновляем баланс
 	window.dispatchEvent(new CustomEvent('balanceUpdated'));
 }
 
