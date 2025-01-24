@@ -294,17 +294,29 @@ function gameOver() {
 			if (window.Telegram?.WebApp) {
 				const username = window.Telegram.WebApp.initDataUnsafe?.user?.username || 'Player';
 				
-				// Используем shareToStory с URL изображения и параметрами
-				window.Telegram.WebApp.shareToStory(
-					'https://pandapp.ru/assets/icon.png', // URL вашего фонового изображения
-					{
-						text: `🎮 ${username} scored ${lastScore} points in TimberPanda!\n\n🎯 Can you beat this score?`,
-						widget_link: {
-							url: 'https://pandapp.ru',
-							name: 'Play TimberPanda'
-						}
+				// Получаем реферальную ссылку
+				fetch(`/get-referral-link?telegramId=${window.Telegram.WebApp.initDataUnsafe.user.id}`, {
+					headers: {
+						'x-telegram-init-data': window.Telegram.WebApp.initData
 					}
-				);
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (data.inviteLink) {
+						// Используем полученную реферальную ссылку
+						window.Telegram.WebApp.shareToStory(
+							'https://pandapp.ru/assets/icon.png',
+							{
+								text: `🎮 ${username} scored ${lastScore} points in TimberPanda!\n\n🎯 Can you beat this score?`,
+								widget_link: {
+									url: data.inviteLink,
+									name: 'Play TimberPanda'
+								}
+							}
+						);
+					}
+				})
+				.catch(error => console.error('Error getting referral link:', error));
 			}
 		};
 		

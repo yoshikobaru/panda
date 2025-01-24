@@ -1209,17 +1209,27 @@ bot.on('callback_query', async (ctx) => {
     try {
         const data = JSON.parse(ctx.callbackQuery.data);
         if (data.action === 'create_story') {
-            // Используем правильный метод для создания истории
+            // Получаем пользователя и его реферальную ссылку
+            const user = await User.findOne({ 
+                where: { telegramId: ctx.from.id.toString() } 
+            });
+            
+            if (!user) {
+                throw new Error('User not found');
+            }
+
+            const inviteLink = `https://t.me/pandapp_gamebot?start=${user.referralCode}`;
+            
+            // Используем правильный метод для создания истории с реферальной ссылкой
             const storyParams = {
                 url: 'https://pandapp.ru/assets/icon.png',
                 text: `🎮 ${data.username}\n\n⭐️ Scored ${data.score} points\nin TimberPanda!\n\n🎯 Can you beat this?`,
                 widget_link: {
-                    url: 'https://pandapp.ru',
+                    url: inviteLink, // Используем реферальную ссылку вместо прямой
                     name: 'Play TimberPanda'
                 }
             };
             
-            // Отправляем пользователю ссылку для создания истории
             await ctx.telegram.sendMessage(ctx.from.id, 'Create your story:', {
                 reply_markup: {
                     inline_keyboard: [[{
