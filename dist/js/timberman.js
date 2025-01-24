@@ -265,9 +265,9 @@ function gameOver() {
 		shareBtn = document.createElement('button');
 		shareBtn.id = 'shareButton';
 		shareBtn.innerHTML = `
-			<div style="display: flex; align-items: center; gap: 12px;">
-				<span style="font-size: 20px; line-height: 1;">📱</span>
-				<span>Share Story</span>
+			<div style="display: flex; align-items: center; gap: 8px;">
+				<span style="font-size: 16px; line-height: 1;">📱</span>
+				<span style="letter-spacing: 1px;">SHARE</span>
 			</div>
 		`;
 		shareBtn.style.cssText = `
@@ -275,22 +275,31 @@ function gameOver() {
 			left: 50%;
 			transform: translateX(-50%);
 			bottom: 100px;
-			padding: 16px 32px;
-			background: linear-gradient(135deg, #FF6B6B, #FF8E53);
-			color: white;
-			border: none;
-			border-radius: 16px;
-			font-size: 18px;
-			font-weight: 600;
+			padding: 12px 24px;
+			background: #2D2D2D;
+			color: #00FF66;
+			border: 2px solid #00FF66;
+			border-radius: 0;
+			font-size: 14px;
+			font-weight: 700;
 			cursor: pointer;
 			z-index: 9999;
-			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-			box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
-			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-			backdrop-filter: blur(10px);
-			border: 1px solid rgba(255, 255, 255, 0.1);
-			text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+			font-family: 'Press Start 2P', system-ui, monospace;
+			box-shadow: 
+				0 0 10px rgba(0, 255, 102, 0.3),
+				inset 0 0 10px rgba(0, 255, 102, 0.2);
+			text-transform: uppercase;
 			animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+			clip-path: polygon(
+				0 0,
+				calc(100% - 8px) 0,
+				100% 8px,
+				100% calc(100% - 8px),
+				calc(100% - 8px) 100%,
+				8px 100%,
+				0 calc(100% - 8px),
+				0 8px
+			);
 		`;
 
 		// Добавляем keyframes для анимации
@@ -307,22 +316,90 @@ function gameOver() {
 				}
 			}
 
-			#shareButton:hover {
-				transform: translateX(-50%) translateY(-2px);
-				box-shadow: 0 8px 20px rgba(255, 107, 107, 0.6);
-				background: linear-gradient(135deg, #FF8E53, #FF6B6B);
-			}
-
-			#shareButton:active {
-				transform: translateX(-50%) translateY(0);
-				box-shadow: 0 4px 10px rgba(255, 107, 107, 0.4);
-			}
-
-			@media (max-width: 768px) {
-				#shareButton {
-					padding: 14px 28px;
-					font-size: 16px;
+			@keyframes glitch {
+				0% {
+					text-shadow: 
+						0.05em 0 0 rgba(255, 0, 0, .75),
+						-0.025em -0.05em 0 rgba(0, 255, 0, .75),
+						0.025em 0.05em 0 rgba(0, 0, 255, .75);
 				}
+				14% {
+					text-shadow: 
+						0.05em 0 0 rgba(255, 0, 0, .75),
+						-0.025em -0.05em 0 rgba(0, 255, 0, .75),
+						0.025em 0.05em 0 rgba(0, 0, 255, .75);
+				}
+				15% {
+					text-shadow: 
+						-0.05em -0.025em 0 rgba(255, 0, 0, .75),
+						0.025em 0.025em 0 rgba(0, 255, 0, .75),
+						-0.05em -0.05em 0 rgba(0, 0, 255, .75);
+				}
+				49% {
+					text-shadow: 
+						-0.05em -0.025em 0 rgba(255, 0, 0, .75),
+						0.025em 0.025em 0 rgba(0, 255, 0, .75),
+						-0.05em -0.05em 0 rgba(0, 0, 255, .75);
+				}
+				50% {
+					text-shadow: 
+						0.025em 0.05em 0 rgba(255, 0, 0, .75),
+						0.05em 0 0 rgba(0, 255, 0, .75),
+						0 -0.05em 0 rgba(0, 0, 255, .75);
+				}
+				99% {
+					text-shadow: 
+						0.025em 0.05em 0 rgba(255, 0, 0, .75),
+						0.05em 0 0 rgba(0, 255, 0, .75),
+						0 -0.05em 0 rgba(0, 0, 255, .75);
+				}
+				100% {
+					text-shadow: 
+						-0.025em 0 0 rgba(255, 0, 0, .75),
+						-0.025em -0.025em 0 rgba(0, 255, 0, .75),
+						-0.025em -0.05em 0 rgba(0, 0, 255, .75);
+				}
+			}
+
+			#shareButton {
+				position: relative;
+				isolation: isolate;
+			}
+
+			#shareButton:hover {
+				background: #00FF66;
+				color: #2D2D2D;
+				box-shadow: 
+					0 0 20px rgba(0, 255, 102, 0.5),
+					inset 0 0 20px rgba(0, 0, 0, 0.2);
+			}
+
+			#shareButton:hover span {
+				animation: glitch 1s infinite linear;
+			}
+
+			#shareButton::before {
+				content: '';
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: linear-gradient(
+					45deg,
+					transparent 0%,
+					rgba(0, 255, 102, 0.1) 45%,
+					rgba(0, 255, 102, 0.2) 50%,
+					rgba(0, 255, 102, 0.1) 55%,
+					transparent 100%
+				);
+				transform: translateX(-100%);
+				transition: transform 0.5s;
+				z-index: -1;
+			}
+
+			#shareButton:hover::before {
+				transform: translateX(100%);
 			}
 		`;
 		document.head.appendChild(style);
