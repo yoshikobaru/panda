@@ -293,18 +293,23 @@ function gameOver() {
 		shareBtn.onclick = function() {
 			if (window.Telegram?.WebApp) {
 				const username = window.Telegram.WebApp.initDataUnsafe?.user?.username || 'Player';
-				const telegramId = window.Telegram.WebApp.initDataUnsafe?.user?.id;
-				
-				fetch(`/create-story?telegramId=${telegramId}&score=${lastScore}`)
-					.then(response => response.json())
-					.then(data => {
-						if (!data.success) {
-							console.error('Failed to create story:', data.error);
-						}
-					})
-					.catch(error => {
-						console.error('Error creating story:', error);
-					});
+				window.Telegram.WebApp.showPopup({
+					title: 'Share Story',
+					message: 'Do you want to share your achievement?',
+					buttons: [{
+						id: "share",
+						type: "default",
+						text: "Share"
+					}]
+				}, (buttonId) => {
+					if (buttonId === 'share') {
+						window.Telegram.WebApp.sendData(JSON.stringify({
+							type: 'story',
+							text: `🎮 ${username} scored ${lastScore} points in TimberPanda!\n\n🎯 Can you beat this score?`,
+							background_color: '#223522'
+						}));
+					}
+				});
 			}
 		};
 		

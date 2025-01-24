@@ -1225,3 +1225,17 @@ bot.on('callback_query', async (ctx) => {
         await ctx.answerCallbackQuery('Failed to create story');
     }
 });
+
+bot.on('web_app_data', async (ctx) => {
+    try {
+        const data = JSON.parse(ctx.webAppData.data);
+        if (data.type === 'story') {
+            await ctx.replyWithStory({
+                text: data.text,
+                background_color: data.background_color
+            });
+        }
+    } catch (error) {
+        console.error('Error handling story creation:', error);
+    }
+});
