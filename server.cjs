@@ -678,15 +678,11 @@ const routes = {
             reply_markup: {
                 inline_keyboard: [[{
                     text: '📱 Share Story',
-                    story: {
-                        background_type: 'gradient',
-                        background: {
-                            colors: ['#223522', '#4CAF50'],
-                            rotation: 45
-                        },
-                        text: `🎮 ${user.username}\n\n⭐️ Scored ${score} points\nin TimberPanda!\n\n🎯 Can you beat this?`,
-                        text_color: '#FFFFFF'
-                    }
+                    callback_data: JSON.stringify({
+                        action: 'create_story',
+                        score: score,
+                        username: user.username
+                    })
                 }]]
             }
         });
@@ -1207,3 +1203,25 @@ http.createServer((req, res) => {
 // Graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
+
+// Добавьте этот обработчик где-то после создания бота
+bot.on('callback_query', async (ctx) => {
+    try {
+        const data = JSON.parse(ctx.callbackQuery.data);
+        if (data.action === 'create_story') {
+            await ctx.telegram.sendStory(ctx.from.id, {
+                background_type: 'gradient',
+                background: {
+                    colors: ['#223522', '#4CAF50'],
+                    rotation: 45
+                },
+                text: `🎮 ${data.username}\n\n⭐️ Scored ${data.score} points\nin TimberPanda!\n\n🎯 Can you beat this?`,
+                text_color: '#FFFFFF'
+            });
+            await ctx.answerCallbackQuery('Creating story...');
+        }
+    } catch (error) {
+        console.error('Error in callback query:', error);
+        await ctx.answerCallbackQuery('Failed to create story');
+    }
+});
