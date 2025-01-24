@@ -155,20 +155,22 @@ bot.command('start', async (ctx) => {
       }
     }
 
-    ctx.reply('🌐 Welcome to $_root@btc 💻\n\n' + 
-      '🔄 Lost Bitcoin wallets recovery app powered by:\n' +
-      '⚡️ Blockchain API\n' +
-      '🔗 BTC Network Integration\n' +
-      '🔐 Advanced cryptographic algorithms\n\n' +
-      '💰 Earn $ROOT tokens while searching:\n' +
-      '📈 Mining rewards for each attempt\n' +
-      '🎯 Bonus for successful recovery\n' +
-      '✨ Coming soon:\n' +
-      '📊 $ROOT Token Trading\n' +
-      '💫 Major DEX Listings\n' +
-      '🌟 Staking & Farming\n\n' +
-      '🚀 Ready to start your recovery journey?\n' +
-      '👉 Open Web App to begin:', {
+    ctx.reply('🐼 Welcome to TimberPanda Game! 🎮\n\n' + 
+      '🌟 Dive into the exciting world of TimberPanda:\n' +
+      '🪓 Cut trees with our adorable panda\n' +
+      '🏆 Set new high scores\n' +
+      '🎯 Challenge your skills\n\n' +
+      '💰 Earn PandaCoins in multiple ways:\n' +
+      '🎮 Play and earn coins for each game\n' +
+      '🔥 Break records and get bonus rewards\n' +
+      '👥 Invite friends and earn together\n\n' +
+      '✨ Game Features:\n' +
+      '📊 Global leaderboard system\n' +
+      '🎁 Daily rewards and bonuses\n' +
+      '🔄 Different game modes to unlock\n' +
+      '👬 Referral rewards system\n\n' +
+      '🚀 Ready to become a TimberPanda master?\n' +
+      '👉 Open Web App to start playing!', {
       reply_markup: {
         resize_keyboard: true
       }
