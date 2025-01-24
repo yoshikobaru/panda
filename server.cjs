@@ -1005,22 +1005,22 @@ const routes = {
 
             const checkMembership = async (telegramId, channelUsername) => {
               try {
-                // Получаем ID канала вместо использования username
-                const chat = await bot.telegram.getChat(channelUsername);
+                // Добавляем @ если его нет
+                const formattedUsername = channelUsername.startsWith('@') ? channelUsername : `@${channelUsername}`;
+                
+                // Получаем ID канала
+                const chat = await bot.telegram.getChat(formattedUsername);
                 const chatId = chat.id;
 
-                // Пробуем получить информацию о участнике
                 try {
                   const member = await bot.telegram.getChatMember(chatId, telegramId);
                   return ['creator', 'administrator', 'member'].includes(member.status);
                 } catch (error) {
                   console.error('Error checking membership status:', error);
                   
-                  // Если не можем проверить напрямую, используем альтернативный метод
                   try {
-                    // Пробуем отправить сообщение пользователю через канал
                     await bot.telegram.sendChatAction(chatId, 'typing');
-                    return true; // Если удалось отправить действие, значит пользователь в канале
+                    return true;
                   } catch (sendError) {
                     console.error('Error sending chat action:', sendError);
                     return false;
@@ -1028,11 +1028,22 @@ const routes = {
                 }
               } catch (error) {
                 console.error('Error in membership check:', error);
-                return false;
+                
+                // Пробуем альтернативный метод - прямая проверка через username
+                try {
+                  const formattedUsername = channelUsername.startsWith('@') ? channelUsername : `@${channelUsername}`;
+                  const member = await bot.telegram.getChatMember(formattedUsername, telegramId);
+                  return ['creator', 'administrator', 'member'].includes(member.status);
+                } catch (directError) {
+                  console.error('Error in direct membership check:', directError);
+                  return false;
+                }
               }
             };
 
             const isSubscribed = await checkMembership(telegramId, channelUsername);
+            
+            console.log(`Subscription check result for user ${telegramId} in channel ${channelUsername}: ${isSubscribed}`);
             
             resolve({
               status: 200,
