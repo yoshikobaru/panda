@@ -59,10 +59,6 @@ var timebar = loadSprite("/assets/time-bar.png", onReady);
 // В начале файла добавим переменную для хранения последнего счета
 var lastScore = 0;
 
-// Добавляем новую кнопку Share
-var shareButton = loadSprite("/assets/icon.png", onReady);
-countSprites++; // Увеличиваем количество спрайтов
-
 function onReady() {
 	loadProgress++
 	
@@ -150,7 +146,13 @@ function addTrunk() {
 }
 
 function restartGame() {
-	score = 0; // Обнуляем счет при рестарте игры
+	// Скрываем кнопку шаринга при рестарте игры
+	const shareBtn = document.getElementById('shareButton');
+	if (shareBtn) {
+		shareBtn.style.display = 'none';
+	}
+	
+	score = 0;
 	initTrunk();
 	level = levelMenu;
 }
@@ -257,10 +259,37 @@ function gameOver() {
 	// Обновляем баланс
 	window.dispatchEvent(new CustomEvent('balanceUpdated'));
 
-	// Добавляем кнопку шаринга в сторис
-	displaySprite(play, 350, 800); // Сдвигаем кнопку Play немного выше
-	displaySprite(shareButton, 350, 950); // Новая кнопка под Play
-	
+	// Создаем HTML кнопку для шаринга, если её еще нет
+	let shareBtn = document.getElementById('shareButton');
+	if (!shareBtn) {
+		shareBtn = document.createElement('button');
+		shareBtn.id = 'shareButton';
+		shareBtn.innerHTML = '📤 Share Score';
+		shareBtn.style.cssText = `
+			position: absolute;
+			left: 50%;
+			transform: translateX(-50%);
+			top: 950px;
+			padding: 10px 20px;
+			background-color: #4CAF50;
+			color: white;
+			border: none;
+			border-radius: 5px;
+			font-size: 16px;
+			cursor: pointer;
+			z-index: 1000;
+		`;
+		shareBtn.onclick = function() {
+			if (window.Telegram?.WebApp) {
+				const text = `🎮 I scored ${lastScore} points in TimberPanda!\n\n🌲 Can you beat my score?\n\n🎯 Join the challenge:`;
+				window.Telegram.WebApp.switchInlineQuery(text, ['users', 'groups', 'channels']);
+			}
+		};
+		document.getElementById('game-container').appendChild(shareBtn);
+	} else {
+		shareBtn.style.display = 'block';
+	}
+
 	// Отображаем счет
 	for (var i = 0; i < score.toString().length; i++) {
 		let digit = parseInt(score.toString()[i]);
@@ -306,7 +335,6 @@ function renderGame() {
 		displaySprite(rip, man.x, 1240);
 		displaySprite(gameover, 110, -250);
 		displaySprite(play, 350, 800);
-		displaySprite(shareButton, 350, 950);
 		
 		// Отображаем best score
 		for (var i=0; i < bestscore.toString().length; i++) {
