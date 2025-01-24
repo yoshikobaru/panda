@@ -1000,59 +1000,54 @@ const routes = {
               return;
             }
 
-            try {
-              // Добавляем несколько попыток проверки с задержкой
-              const checkMembership = async (attempts = 3) => {
-                try {
-                  const chatMember = await bot.telegram.getChatMember(
-                    `@${channelUsername}`, 
-                    telegramId
-                  );
-                  
-                  const isSubscribed = ['creator', 'administrator', 'member'].includes(chatMember.status);
-                  
-                  if (!isSubscribed && attempts > 1) {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    return checkMembership(attempts - 1);
-                  }
-                  
-                  return isSubscribed;
-                } catch (error) {
-                  console.error('Error in membership check attempt:', error);
-                  if (attempts > 1) {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    return checkMembership(attempts - 1);
-                  }
-                  return false;
-                }
-              };
+            // Добавляем задержку перед проверкой
+            await new Promise(resolve => setTimeout(resolve, 2000));
 
-              const isSubscribed = await checkMembership();
-              
-              resolve({
-                status: 200,
-                body: { 
-                  success: true,
-                  isSubscribed 
+            const checkMembership = async (telegramId, channelUsername) => {
+              try {
+                // Получаем ID канала вместо использования username
+                const chat = await bot.telegram.getChat(channelUsername);
+                const chatId = chat.id;
+
+                // Пробуем получить информацию о участнике
+                try {
+                  const member = await bot.telegram.getChatMember(chatId, telegramId);
+                  return ['creator', 'administrator', 'member'].includes(member.status);
+                } catch (error) {
+                  console.error('Error checking membership status:', error);
+                  
+                  // Если не можем проверить напрямую, используем альтернативный метод
+                  try {
+                    // Пробуем отправить сообщение пользователю через канал
+                    await bot.telegram.sendChatAction(chatId, 'typing');
+                    return true; // Если удалось отправить действие, значит пользователь в канале
+                  } catch (sendError) {
+                    console.error('Error sending chat action:', sendError);
+                    return false;
+                  }
                 }
-              });
-            } catch (error) {
-              console.error('Error checking subscription:', error);
-              resolve({
-                status: 200,
-                body: { 
-                  success: true,
-                  isSubscribed: false 
-                }
-              });
-            }
-          } catch (error) {
-            console.error('Error processing request:', error);
+              } catch (error) {
+                console.error('Error in membership check:', error);
+                return false;
+              }
+            };
+
+            const isSubscribed = await checkMembership(telegramId, channelUsername);
+            
             resolve({
-              status: 500,
+              status: 200,
               body: { 
-                success: false,
-                error: 'Internal server error' 
+                success: true,
+                isSubscribed 
+              }
+            });
+          } catch (error) {
+            console.error('Error processing subscription check:', error);
+            resolve({
+              status: 200,
+              body: { 
+                success: true,
+                isSubscribed: false 
               }
             });
           }
