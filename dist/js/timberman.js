@@ -27,32 +27,18 @@ resizeScreen(true);
 // Load sprites
 var background = loadSprite("/assets/background.png", onReady);
 
-// Load sounds - делаем загрузку звука без onReady callback
-var deathSound = new Audio('/assets/death.mp3');
-deathSound.addEventListener('canplaythrough', function() {
-    loadProgress++; // Увеличиваем счетчик загрузки когда звук готов
-}, { once: true });
-
-deathSound.addEventListener('error', function() {
-    // Если MP3 не загрузился, пробуем WAV
-    deathSound = new Audio('/assets/death.wav');
-    deathSound.addEventListener('canplaythrough', function() {
+// Load sounds с правильными путями и обработкой ошибок
+var deathSound = null;
+try {
+    deathSound = new Audio('./assets/death.mp3');
+    deathSound.addEventListener('canplaythrough', () => {
         loadProgress++;
+        console.log('Sound loaded successfully');
     }, { once: true });
-    
-    deathSound.addEventListener('error', function() {
-        // Если WAV не загрузился, пробуем OGG
-        deathSound = new Audio('/assets/death.ogg');
-        deathSound.addEventListener('canplaythrough', function() {
-            loadProgress++;
-        }, { once: true });
-        
-        deathSound.addEventListener('error', function() {
-            console.log('Failed to load any audio format');
-            loadProgress++; // Увеличиваем счетчик даже при ошибке, чтобы игра могла продолжиться
-        });
-    });
-});
+} catch (e) {
+    console.log('Sound initialization failed, continuing without sound');
+    loadProgress++; // Увеличиваем счетчик даже при ошибке
+}
 
 // Intro
 var clic = loadSprite("/assets/clic.png", onReady);
@@ -181,15 +167,23 @@ function restartGame() {
 function gameOver() {
 	level = levelGameOver;
 	
-	if (deathSound) {
-		deathSound.currentTime = 0; // Перематываем на начало
-		deathSound.play().catch(e => console.log('Sound playback failed:', e));
-	}
-	
 	// Сохраняем текущий счет перед сбросом
 	lastScore = score;
 	
-	// Сохраняем рекорд в localStorage для проверки задач
+	// Безопасное воспроизведение звука
+	if (deathSound) {
+		try {
+			deathSound.currentTime = 0;
+			deathSound.play().catch(e => console.log('Sound playback failed:', e));
+		} catch (e) {
+			console.log('Sound playback error:', e);
+		}
+	}
+	
+	// Проверяем наличие Telegram WebApp и user.id
+	const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+	
+	// Сохраняем рекорд в localStorage
 	const currentHighScore = localStorage.getItem('timbermanHighScore') || 0;
 	if (score > currentHighScore) {
 		localStorage.setItem('timbermanHighScore', score);
@@ -200,64 +194,65 @@ function gameOver() {
 		bestscore = score;
 		localStorage.setItem('bestscore', bestscore);
 
-		// Отправляем новый рекорд на сервер
-		fetch('/update-high-score', {
+		// Отправляем новый рекорд только если есть telegramId
+		if (telegramId) {
+			fetch('/update-high-score', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'x-telegram-init-data': window.Telegram.WebApp.initData
+				},
+				body: JSON.stringify({
+					telegramId: telegramId,
+					highScore: score
+				})
+			})
+			.then(response => response.json())
+			.then(data => {
+				if (data.success) {
+					console.log('High score updated successfully');
+				}
+			})
+			.catch(error => {
+				console.error('Error updating high score:', error);
+			});
+		}
+	}
+
+	// Обновляем баланс только если есть telegramId
+	if (telegramId) {
+		fetch('/update-balances', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
 				'x-telegram-init-data': window.Telegram.WebApp.initData
 			},
 			body: JSON.stringify({
-				telegramId: window.Telegram.WebApp.initDataUnsafe.user.id,
-				highScore: score
+				telegramId: telegramId,
+				amount: parseInt(score),
+				type: 'game'
 			})
 		})
 		.then(response => response.json())
 		.then(data => {
 			if (data.success) {
-				console.log('High score updated successfully');
+				console.log('Balance updated successfully:', data.balances);
+				
+				// Обновляем локальные счетчики
+				let totalDPS = parseInt(localStorage.getItem('totalDPS')) || 0;
+				let totalGameEarnings = parseInt(localStorage.getItem('totalGameEarnings')) || 0;
+				
+				totalDPS += parseInt(score);
+				totalGameEarnings += parseInt(score);
+				
+				localStorage.setItem('totalDPS', totalDPS.toString());
+				localStorage.setItem('totalGameEarnings', totalGameEarnings.toString());
 			}
 		})
 		.catch(error => {
-			console.error('Error updating high score:', error);
+			console.error('Error updating balance:', error);
 		});
 	}
-
-	// Добавляем текущий счет к общему DPS и обновляем баланс
-	fetch('/update-balances', {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			'x-telegram-init-data': window.Telegram.WebApp.initData
-		},
-		body: JSON.stringify({
-			telegramId: window.Telegram.WebApp.initDataUnsafe.user.id,
-			amount: parseInt(score),
-			type: 'game'
-		})
-	})
-	.then(response => response.json())
-	.then(data => {
-		if (data.success) {
-			console.log('Balance updated successfully:', data.balances);
-			
-			// Обновляем локальные счетчики
-			let totalDPS = parseInt(localStorage.getItem('totalDPS')) || 0;
-			let totalGameEarnings = parseInt(localStorage.getItem('totalGameEarnings')) || 0;
-			
-			totalDPS += parseInt(score);
-			totalGameEarnings += parseInt(score);
-			
-			localStorage.setItem('totalDPS', totalDPS.toString());
-			localStorage.setItem('totalGameEarnings', totalGameEarnings.toString());
-		} else {
-			console.error('Failed to update balance:', data.error);
-		}
-	})
-	.catch(error => {
-		console.error('Error updating balance:', error);
-	});
-
 
 	const totalGameDPS = parseInt(localStorage.getItem('totalGameDPS')) || 0; 
  localStorage.setItem('totalGameDPS', (totalGameDPS + score).toString());

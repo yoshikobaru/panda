@@ -982,6 +982,13 @@ const routes = {
 
 // Функция для обработки статических файлов
 const serveStaticFile = (filePath, res) => {
+  // Добавляем обработку путей для public директории
+  if (filePath.startsWith('/public/')) {
+    filePath = path.join(__dirname, filePath);
+  } else {
+    filePath = path.join(__dirname, 'dist', filePath);
+  }
+
   const extname = String(path.extname(filePath)).toLowerCase();
   const contentType = {
     '.html': 'text/html',
@@ -992,10 +999,16 @@ const serveStaticFile = (filePath, res) => {
     '.jpg': 'image/jpg',
     '.gif': 'image/gif',
     '.svg': 'image/svg+xml',
+    '.mp3': 'audio/mpeg',
+    '.wav': 'audio/wav',
+    '.ogg': 'audio/ogg'
   }[extname] || 'application/octet-stream';
+
+  console.log('Serving file:', filePath); // Добавляем лог
 
   fs.readFile(filePath, (error, content) => {
     if (error) {
+      console.error('File read error:', error); // Добавляем лог ошибки
       if(error.code === 'ENOENT') {
         res.writeHead(404);
         res.end('File not found');
