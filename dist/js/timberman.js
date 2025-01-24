@@ -267,7 +267,7 @@ function gameOver() {
 		shareBtn.innerHTML = `
 			<div style="display: flex; align-items: center; gap: 8px;">
 				<span style="font-size: 16px; line-height: 1;">📱</span>
-				<span style="letter-spacing: 1px;">SHARE</span>
+				<span style="letter-spacing: 1px;">SHARE STORY</span>
 			</div>
 		`;
 		shareBtn.style.cssText = `
