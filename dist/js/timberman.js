@@ -293,14 +293,8 @@ function gameOver() {
 		shareBtn.onclick = function() {
 			if (window.Telegram?.WebApp) {
 				const username = window.Telegram.WebApp.initDataUnsafe?.user?.username || 'Player';
-				window.Telegram.WebApp.createStory({
-					background_type: 'gradient',
-					background: {
-						colors: ['#223522', '#4CAF50'],
-						rotation: 45
-					},
-					text: `🎮 ${username}\n\n🌟 Scored ${lastScore} points\nin TimberPanda!\n\n🎯 Can you beat this?`,
-					text_color: '#FFFFFF'
+				window.Telegram.WebApp.shareStory({
+					text: `🎮 ${username}\n\n🌟 Scored ${lastScore} points\nin TimberPanda!\n\n�� Can you beat this?`
 				});
 			}
 		};
