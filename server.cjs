@@ -975,6 +975,70 @@ const routes = {
           }
         });
       });
+    },
+    '/check-subscription': async (req, res) => {
+      const authError = await authMiddleware(req, res);
+      if (authError) return authError;
+
+      return new Promise((resolve) => {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        
+        req.on('end', async () => {
+          try {
+            const data = JSON.parse(body);
+            const { telegramId, channelUsername } = data;
+            
+            if (!telegramId || !channelUsername) {
+              resolve({
+                status: 400,
+                body: { 
+                  success: false,
+                  error: 'Missing required parameters' 
+                }
+              });
+              return;
+            }
+
+            try {
+              // Проверяем статус участника в канале
+              const chatMember = await bot.telegram.getChatMember(
+                `@${channelUsername}`, 
+                telegramId
+              );
+              
+              // Проверяем статус подписки
+              const isSubscribed = ['creator', 'administrator', 'member'].includes(chatMember.status);
+              
+              resolve({
+                status: 200,
+                body: { 
+                  success: true,
+                  isSubscribed 
+                }
+              });
+            } catch (error) {
+              console.error('Error checking subscription:', error);
+              resolve({
+                status: 200,
+                body: { 
+                  success: true,
+                  isSubscribed: false 
+                }
+              });
+            }
+          } catch (error) {
+            console.error('Error processing request:', error);
+            resolve({
+              status: 500,
+              body: { 
+                success: false,
+                error: 'Internal server error' 
+              }
+            });
+          }
+        });
+      });
     }
   }
 };
