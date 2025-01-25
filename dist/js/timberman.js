@@ -62,28 +62,28 @@ var lastScore = 0;
 // Sound effects initialization
 if (!window.gameAudio) {
     window.gameAudio = {
-        deathSound: new Audio('/assets/sounds/death.mp3')
+        deathSound: new Audio('/assets/sounds/death.mp3'),
+        
+        // Перемещаем функцию loadSound в объект gameAudio
+        loadSound: async function() {
+            try {
+                await this.deathSound.load();
+                console.log('Death sound loaded successfully');
+            } catch (error) {
+                console.error('Failed to load death sound:', error);
+            }
+        }
     };
     window.gameAudio.deathSound.preload = 'auto';
+    
+    // Инициализируем звук при первом создании объекта
+    window.gameAudio.loadSound();
+
+    // Добавляем обработчик для iOS только один раз
+    document.addEventListener('touchstart', function() {
+        window.gameAudio.loadSound();
+    }, { once: true });
 }
-
-// Функция для загрузки звука
-const loadSound = async () => {
-    try {
-        await window.gameAudio.deathSound.load();
-        console.log('Death sound loaded successfully');
-    } catch (error) {
-        console.error('Failed to load death sound:', error);
-    }
-};
-
-// Загружаем звук при инициализации
-loadSound();
-
-// Добавляем обработчик для iOS
-document.addEventListener('touchstart', function() {
-    loadSound();
-}, { once: true });
 
 function onReady() {
 	loadProgress++
@@ -186,7 +186,7 @@ function restartGame() {
 function gameOver() {
 	// Воспроизводим звук с проверками
 	try {
-		if (window.gameAudio.deathSound.readyState >= 2) { // Проверяем, что звук загружен
+		if (window.gameAudio.deathSound.readyState >= 2) {
 			window.gameAudio.deathSound.currentTime = 0;
 			const playPromise = window.gameAudio.deathSound.play();
 
@@ -699,7 +699,7 @@ function shareScore() {
 	}
 }
 
-// Добавляем функцию очистки звука при выходе из игры
+// Функция очистки при выходе из игры
 function cleanupGame() {
 	if (window.gameAudio) {
 		window.gameAudio.deathSound.pause();
