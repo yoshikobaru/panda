@@ -63,26 +63,50 @@ var lastScore = 0;
 if (!window.gameAudio) {
     window.gameAudio = {
         deathSound: new Audio('/assets/sounds/death.mp3'),
+        cutSound: new Audio('/assets/sounds/cut.mp3'),
         
-        // Перемещаем функцию loadSound в объект gameAudio
         loadSound: async function() {
             try {
-                await this.deathSound.load();
-                console.log('Death sound loaded successfully');
+                await Promise.all([
+                    this.deathSound.load(),
+                    this.cutSound.load()
+                ]);
+                console.log('All sounds loaded successfully');
             } catch (error) {
-                console.error('Failed to load death sound:', error);
+                console.error('Failed to load sounds:', error);
             }
         }
     };
+
+    // Предзагрузка всех звуков
     window.gameAudio.deathSound.preload = 'auto';
+    window.gameAudio.cutSound.preload = 'auto';
     
-    // Инициализируем звук при первом создании объекта
+    // Инициализируем звуки при первом создании объекта
     window.gameAudio.loadSound();
 
     // Добавляем обработчик для iOS только один раз
     document.addEventListener('touchstart', function() {
         window.gameAudio.loadSound();
     }, { once: true });
+}
+
+// Добавляем функцию для воспроизведения звука рубки
+function playCutSound() {
+    try {
+        if (window.gameAudio.cutSound.readyState >= 2) {
+            window.gameAudio.cutSound.currentTime = 0;
+            const playPromise = window.gameAudio.cutSound.play();
+
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.warn("Cut sound playback failed:", error);
+                });
+            }
+        }
+    } catch (error) {
+        console.warn("Error playing cut sound:", error);
+    }
 }
 
 function onReady() {
@@ -651,7 +675,10 @@ function renderGame() {
 			level = levelPlay;
 		}
 
-		// Joue le son "cut"
+		// Воспроизводим звук рубки
+		playCutSound();
+
+		// Анимация рубки
 		playAnimation(man, "cut")		
 				
 		// Est ce une branche qui pourrait heurter le bucheron
@@ -702,8 +729,11 @@ function shareScore() {
 // Функция очистки при выходе из игры
 function cleanupGame() {
 	if (window.gameAudio) {
+		// Останавливаем все звуки
 		window.gameAudio.deathSound.pause();
 		window.gameAudio.deathSound.currentTime = 0;
+		window.gameAudio.cutSound.pause();
+		window.gameAudio.cutSound.currentTime = 0;
 	}
 	// ... остальной код очистки ...
 }
