@@ -59,6 +59,15 @@ var timebar = loadSprite("/assets/time-bar.png", onReady);
 // В начале файла добавим переменную для хранения последнего счета
 var lastScore = 0;
 
+// Sound effects
+var deathSound = new Audio('/assets/death.mp3');
+deathSound.preload = 'auto';
+
+// Добавляем обработчик для iOS
+document.addEventListener('touchstart', function() {
+    deathSound.load();
+}, { once: true });
+
 function onReady() {
 	loadProgress++
 	
@@ -158,6 +167,23 @@ function restartGame() {
 }
 
 function gameOver() {
+	// Воспроизводим звук с проверками
+	try {
+		// Сбрасываем время воспроизведения на начало
+		deathSound.currentTime = 0;
+		
+		// Создаем промис для воспроизведения
+		const playPromise = deathSound.play();
+
+		if (playPromise !== undefined) {
+			playPromise.catch(error => {
+				console.log("Audio playback failed:", error);
+			});
+		}
+	} catch (error) {
+		console.log("Error playing death sound:", error);
+	}
+
 	level = levelGameOver;
 	
 	// Сохраняем текущий счет перед сбросом
