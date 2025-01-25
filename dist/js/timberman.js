@@ -59,14 +59,18 @@ var timebar = loadSprite("/assets/time-bar.png", onReady);
 // В начале файла добавим переменную для хранения последнего счета
 var lastScore = 0;
 
-// Sound effects
-const deathSound = new Audio('/assets/sounds/death.mp3');
-deathSound.preload = 'auto';
+// Sound effects initialization
+if (!window.gameAudio) {
+    window.gameAudio = {
+        deathSound: new Audio('/assets/sounds/death.mp3')
+    };
+    window.gameAudio.deathSound.preload = 'auto';
+}
 
 // Функция для загрузки звука
 const loadSound = async () => {
     try {
-        await deathSound.load();
+        await window.gameAudio.deathSound.load();
         console.log('Death sound loaded successfully');
     } catch (error) {
         console.error('Failed to load death sound:', error);
@@ -182,9 +186,9 @@ function restartGame() {
 function gameOver() {
 	// Воспроизводим звук с проверками
 	try {
-		if (deathSound.readyState >= 2) { // Проверяем, что звук загружен
-			deathSound.currentTime = 0;
-			const playPromise = deathSound.play();
+		if (window.gameAudio.deathSound.readyState >= 2) { // Проверяем, что звук загружен
+			window.gameAudio.deathSound.currentTime = 0;
+			const playPromise = window.gameAudio.deathSound.play();
 
 			if (playPromise !== undefined) {
 				playPromise.catch(error => {
@@ -693,4 +697,13 @@ function shareScore() {
 
 		window.Telegram.WebApp.switchInlineQuery(text, ['users', 'groups', 'channels']);
 	}
+}
+
+// Добавляем функцию очистки звука при выходе из игры
+function cleanupGame() {
+	if (window.gameAudio) {
+		window.gameAudio.deathSound.pause();
+		window.gameAudio.deathSound.currentTime = 0;
+	}
+	// ... остальной код очистки ...
 }
