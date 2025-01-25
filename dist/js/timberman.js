@@ -61,9 +61,157 @@ var lastScore = 0;
 
 // Sound effects initialization
 if (!window.gameAudio) {
+    // Получаем состояние звука из localStorage (по умолчанию включен)
+    const isSoundEnabled = localStorage.getItem('gameSound') !== 'false';
+    
     window.gameAudio = {
         deathSound: new Audio('/assets/sounds/death.mp3'),
         cutSound: new Audio('/assets/sounds/cut.mp3'),
+        isSoundEnabled: isSoundEnabled,
+        
+        toggleSound: function() {
+            this.isSoundEnabled = !this.isSoundEnabled;
+            localStorage.setItem('gameSound', this.isSoundEnabled);
+            
+            // Обновляем иконку
+            const soundIcon = document.getElementById('soundIcon');
+            if (soundIcon) {
+                soundIcon.textContent = this.isSoundEnabled ? '🔊' : '🔇';
+            }
+        },
+        
+        // Функция создания кнопки звука
+        createSoundButton: function() {
+            const existingBtn = document.getElementById('soundButton');
+            if (existingBtn) {
+                existingBtn.remove();
+            }
+
+            const gameContainer = document.getElementById('game-container');
+            if (!gameContainer) return;
+
+            const soundBtn = document.createElement('button');
+            soundBtn.id = 'soundButton';
+            
+            // Используем SVG иконки для лучшего качества
+            const soundOnIcon = `
+                <svg class="sound-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 4L7 8H4V16H7L12 20V4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path class="wave wave1" d="M16 8.5C17.3333 10 17.3333 14 16 15.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path class="wave wave2" d="M19 6C21.3333 8.5 21.3333 15.5 19 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            `;
+
+            const soundOffIcon = `
+                <svg class="sound-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 4L7 8H4V16H7L12 20V4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path class="mute-line" d="M20 4L4 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            `;
+
+            soundBtn.innerHTML = `
+                <div class="icon-container">
+                    ${this.isSoundEnabled ? soundOnIcon : soundOffIcon}
+                </div>
+            `;
+
+            soundBtn.style.cssText = `
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                width: 48px;
+                height: 48px;
+                background: rgba(0, 0, 0, 0.6);
+                border: 2px solid rgba(255, 255, 255, 0.1);
+                border-radius: 12px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0;
+                z-index: 9999;
+                backdrop-filter: blur(8px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                color: #ffffff;
+            `;
+
+            // Обновляем стили
+            const style = document.createElement('style');
+            style.id = 'soundButtonStyles';
+            style.textContent = `
+                #soundButton {
+                    overflow: hidden;
+                }
+                
+                #soundButton:hover {
+                    transform: translateY(-2px);
+                    background: rgba(0, 0, 0, 0.8);
+                    border-color: rgba(255, 255, 255, 0.2);
+                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+                }
+                
+                #soundButton:active {
+                    transform: translateY(1px);
+                }
+                
+                #soundButton .icon-container {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    height: 100%;
+                }
+                
+                #soundButton .sound-icon {
+                    transition: transform 0.3s ease;
+                }
+                
+                #soundButton:hover .sound-icon {
+                    transform: scale(1.1);
+                }
+                
+                @keyframes wave {
+                    0% { opacity: 0; }
+                    50% { opacity: 1; }
+                    100% { opacity: 0; }
+                }
+                
+                .wave {
+                    animation: wave 2s infinite;
+                }
+                
+                .wave1 {
+                    animation-delay: 0.2s;
+                }
+                
+                .wave2 {
+                    animation-delay: 0.4s;
+                }
+                
+                .mute-line {
+                    stroke-dasharray: 24;
+                    stroke-dashoffset: ${this.isSoundEnabled ? '24' : '0'};
+                    transition: stroke-dashoffset 0.3s ease;
+                }
+            `;
+
+            soundBtn.addEventListener('click', () => {
+                this.toggleSound();
+                soundBtn.innerHTML = `
+                    <div class="icon-container">
+                        ${this.isSoundEnabled ? soundOnIcon : soundOffIcon}
+                    </div>
+                `;
+            });
+
+            // Удаляем старые стили, если есть
+            const oldStyle = document.getElementById('soundButtonStyles');
+            if (oldStyle) oldStyle.remove();
+            
+            document.head.appendChild(style);
+            gameContainer.appendChild(soundBtn);
+        },
         
         loadSound: async function() {
             try {
@@ -78,26 +226,41 @@ if (!window.gameAudio) {
         }
     };
 
+    // Добавляем стили для hover эффекта один раз
+    if (!document.getElementById('soundButtonStyles')) {
+        const style = document.createElement('style');
+        style.id = 'soundButtonStyles';
+        style.textContent = `
+            #soundButton:hover {
+                transform: scale(1.1);
+                background: rgba(0, 0, 0, 0.7);
+            }
+            #soundButton:active {
+                transform: scale(0.95);
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     // Предзагрузка всех звуков
     window.gameAudio.deathSound.preload = 'auto';
     window.gameAudio.cutSound.preload = 'auto';
     
-    // Инициализируем звуки при первом создании объекта
     window.gameAudio.loadSound();
 
-    // Добавляем обработчик для iOS только один раз
     document.addEventListener('touchstart', function() {
         window.gameAudio.loadSound();
     }, { once: true });
 }
 
-// Добавляем функцию для воспроизведения звука рубки
+// Модифицируем функции воспроизведения звука
 function playCutSound() {
+    if (!window.gameAudio.isSoundEnabled) return;
+    
     try {
         if (window.gameAudio.cutSound.readyState >= 2) {
             window.gameAudio.cutSound.currentTime = 0;
             const playPromise = window.gameAudio.cutSound.play();
-
             if (playPromise !== undefined) {
                 playPromise.catch(error => {
                     console.warn("Cut sound playback failed:", error);
@@ -208,22 +371,21 @@ function restartGame() {
 }
 
 function gameOver() {
-	// Воспроизводим звук с проверками
-	try {
-		if (window.gameAudio.deathSound.readyState >= 2) {
-			window.gameAudio.deathSound.currentTime = 0;
-			const playPromise = window.gameAudio.deathSound.play();
-
-			if (playPromise !== undefined) {
-				playPromise.catch(error => {
-					console.warn("Audio playback failed:", error);
-				});
+	// Проверяем состояние звука перед воспроизведением
+	if (window.gameAudio.isSoundEnabled) {
+		try {
+			if (window.gameAudio.deathSound.readyState >= 2) {
+				window.gameAudio.deathSound.currentTime = 0;
+				const playPromise = window.gameAudio.deathSound.play();
+				if (playPromise !== undefined) {
+					playPromise.catch(error => {
+						console.warn("Death sound playback failed:", error);
+					});
+				}
 			}
-		} else {
-			console.warn("Death sound not fully loaded yet");
+		} catch (error) {
+			console.warn("Error playing death sound:", error);
 		}
-	} catch (error) {
-		console.warn("Error playing death sound:", error);
 	}
 
 	level = levelGameOver;
@@ -535,6 +697,11 @@ function renderGame() {
 		return;
 	}
 
+	// Создаем кнопку звука при первом рендере
+	if (window.gameAudio && !document.getElementById('soundButton')) {
+		window.gameAudio.createSoundButton();
+	}
+
 	clearScreen("black");
 	
 	// Display Background
@@ -735,5 +902,12 @@ function cleanupGame() {
 		window.gameAudio.cutSound.pause();
 		window.gameAudio.cutSound.currentTime = 0;
 	}
+	
+	// Удаляем кнопку звука при очистке
+	const soundButton = document.getElementById('soundButton');
+	if (soundButton) {
+		soundButton.remove();
+	}
+	
 	// ... остальной код очистки ...
 }
